@@ -1,0 +1,6 @@
+# Reference:
+1. Javior. 2018. Faster R-CNN: Down the rabbit hole of modern object detection. Trynolabs. [https://tryolabs.com/blog/2018/01/18/faster-r-cnn-down-the-rabbit-hole-of-modern-object-detection/](https://tryolabs.com/blog/2018/01/18/faster-r-cnn-down-the-rabbit-hole-of-modern-object-detection/).
+2. Xy, Y. 2018. Faster R-CNN (object detection) implemented by Keras for custom data from Google’s Open Images Dataset V4. Toward Data Science. [https://towardsdatascience.com/faster-r-cnn-object-detection-implemented-by-keras-for-custom-data-from-googles-open-images-125f62b9141a](https://towardsdatascience.com/faster-r-cnn-object-detection-implemented-by-keras-for-custom-data-from-googles-open-images-125f62b9141a).
+3. Weng, L. 2017. Object Detection for Dummies Part 3: R-CNN Family. Lil' Log. [https://lilianweng.github.io/lil-log/2017/12/31/object-recognition-for-dummies-part-3.html](https://lilianweng.github.io/lil-log/2017/12/31/object-recognition-for-dummies-part-3.html).
+4. Gad, A. F. 2020. Faster R-CNN Explained for Object Detection Tasks. Paperspace Blog. [https://blog.paperspace.com/faster-r-cnn-explained-object-detection/](https://blog.paperspace.com/faster-r-cnn-explained-object-detection/).
+5. Geeksforgeek. 2020. Faster R-CNN | ML. Geeksforgeek. [https://www.geeksforgeeks.org/faster-r-cnn-ml/](https://www.geeksforgeeks.org/faster-r-cnn-ml/)
