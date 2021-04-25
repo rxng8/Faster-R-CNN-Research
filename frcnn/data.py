@@ -4,12 +4,6 @@ import random
 import copy
 import cv2
 
-import tensorflow as tf
-from tensorflow.keras import layers
-from tensorflow.keras.models import Model
-from tensorflow.keras.applications import VGG16, MobileNetV2
-from tensorflow.keras.preprocessing import image_dataset_from_directory
-
 from tensorflow.keras import backend as K
 
 from .losses import iou

@@ -3,6 +3,7 @@ import math
 import copy
 
 from .data import get_new_img_size
+from .losses import iou
 
 def get_img_output_length(width, height):
     def get_output_length(input_length):
