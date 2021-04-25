@@ -1,4 +1,5 @@
 from . import *
 
 class Config:
-    a = 12
+    a = 0
+    
