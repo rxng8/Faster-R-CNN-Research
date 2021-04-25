@@ -1,4 +1,14 @@
 
+import math
+import numpy as np
+import copy
+
+import tensorflow as tf
+from tensorflow.keras import backend as K
+from tensorflow.keras.losses import categorical_crossentropy
+
+from .data import get_new_img_size
+
 def union(au, bu, area_intersection):
 	area_a = (au[2] - au[0]) * (au[3] - au[1])
 	area_b = (bu[2] - bu[0]) * (bu[3] - bu[1])
@@ -29,7 +39,13 @@ def iou(a, b):
 
 
 
+lambda_rpn_regr = 1.0
+lambda_rpn_class = 1.0
 
+lambda_cls_regr = 1.0
+lambda_cls_class = 1.0
+
+epsilon = 1e-4
 
 def rpn_loss_regr(num_anchors):
     """Loss function for rpn regression

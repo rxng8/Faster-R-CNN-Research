@@ -13,6 +13,8 @@ from tensorflow.keras.layers import \
     Flatten, Dense, Input, Conv2D, MaxPooling2D, Dropout,\
     GlobalAveragePooling2D, GlobalMaxPooling2D, TimeDistributed
 
+from .utils import non_max_suppression_fast, get_img_output_length, apply_regr_np, apply_regr, calc_iou
+
 def vgg_base(img_shape=(800, 600, 3), verbose=False):
     """ Generate a VGG model
 
