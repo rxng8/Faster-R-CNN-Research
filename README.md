@@ -103,3 +103,4 @@ python downloader.py data.txt --download_folder=open_image --num_processes=2
 3. Weng, L. 2017. Object Detection for Dummies Part 3: R-CNN Family. Lil' Log. [https://lilianweng.github.io/lil-log/2017/12/31/object-recognition-for-dummies-part-3.html](https://lilianweng.github.io/lil-log/2017/12/31/object-recognition-for-dummies-part-3.html).
 4. Gad, A. F. 2020. Faster R-CNN Explained for Object Detection Tasks. Paperspace Blog. [https://blog.paperspace.com/faster-r-cnn-explained-object-detection/](https://blog.paperspace.com/faster-r-cnn-explained-object-detection/).
 5. Geeksforgeek. 2020. Faster R-CNN | ML. Geeksforgeek. [https://www.geeksforgeeks.org/faster-r-cnn-ml/](https://www.geeksforgeeks.org/faster-r-cnn-ml/)
+6. RockyXu66. 2018. Faster R-CNN for Open Images Dataset by Keras. frcnn_train_vgg.ipynb. Github. https://github.com/RockyXu66/Faster_RCNN_for_Open_Images_Dataset_Keras/blob/master/frcnn_train_vgg.ipynb

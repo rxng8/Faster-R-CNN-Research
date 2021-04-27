@@ -173,3 +173,8 @@ def train_data_generator():
 
 # Draft 
 
+df = pd.read_csv("./dataset/train-annotations-bbox.csv")
+
+# %%
+
+
