@@ -3,3 +3,4 @@
 dataset/**
 !dataset/.dataset
 !dataset/downloader.py
+!dataset/data_selector.py
