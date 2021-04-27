@@ -168,3 +168,8 @@ def train_data_generator():
 ## Train models.
 
 
+# %%
+
+
+# Draft 
+

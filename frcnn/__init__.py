@@ -21,5 +21,7 @@ class Config:
 
         self.base_net_weights = None
 
+        self.img_scaling_factor = 1
+
 
     
