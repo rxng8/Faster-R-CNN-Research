@@ -14,10 +14,17 @@ As the title, this repo is for Faster R-CNN implementation.
   conda activate rcnn
   ```
 4. Go to [Google's open image dataset](https://storage.googleapis.com/openimages/web/download.html) and download the [**classname description**](https://storage.googleapis.com/openimages/v6/oidv6-class-descriptions.csv) file and the [**box annotation**](https://storage.googleapis.com/openimages/v6/oidv6-train-annotations-bbox.csv) files of the subset and put them in the dataset folder.
-5. Config the right path in [`/dataset/data_selector.py`](./dataset/data_selector.py) to generate 2 files:
-  * a file containing image id to be downloaded.
-  * a file which is the small version of the annotation file.
+5. Config the right path in [`/dataset/data_selector.py`](./dataset/data_selector.py) to generate 2 files and create 1 folder:
+  * a file containing image id to be downloaded (`data.txt` in this case).
+  * a file which is the small version of the annotation file (`train-annotations-bbox.csv` in this case).
+  * a folder containing the images to be downloaded (`open_image` in this case).
 6. Run the [`/dataset/downloader.py`](./dataset/downloader.py) to download image into a folder.
+```
+# Cahnge directory to dataset folder.
+cd dataset
+# For the case we want to use 2 processor.
+python downloader.py data.txt --download_folder=open_image --num_processes=2
+```
 7. Start using the `notebook.py` file.
 
 # Project struture:
@@ -68,7 +75,9 @@ As the title, this repo is for Faster R-CNN implementation.
 ## Week 13: April 25 - April 29:
 * [**2 hours**] Create the whole project pipeline and template, write documentation in readme.
 * [**0.5 hours**] Prepare environment `rcnn` for the project.
-* [**1 hours**] Experiment with [Google's open image dataset](https://storage.googleapis.com/openimages/web/download.html) and setup the dataset downloader pipeline (and download).
+* [**4 hours**] Experiment with [Google's open image dataset](https://storage.googleapis.com/openimages/web/download.html) and setup the dataset downloader pipeline (and download).
+  * [**0.5 hours**] Read about the process of downloading the data from google api.
+  * [**3.5 hours**] Write code and fix bug to generate appropriate files and csv, as well as labels and annotation files.
 * [**1.5 hours**] Read the paper [Faster R-CNN](https://arxiv.org/abs/1506.01497) in-depth. Refering to 5 sources of in-depth information about the method.
 * [**5.5 hours**] Implement the overall structure of Faster R-CNN:
   * [**0.5 hours**] Build and test transfer learning model with base VGG16 ([`frcnn/models.py`](./frcnn/models.py)).
