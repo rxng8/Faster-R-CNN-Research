@@ -13,11 +13,19 @@ As the title, this repo is for Faster R-CNN implementation.
   ```
   conda activate rcnn
   ```
+4. Go to [Google's open image dataset](https://storage.googleapis.com/openimages/web/download.html) and download the [**classname description**](https://storage.googleapis.com/openimages/v6/oidv6-class-descriptions.csv) file and the [**box annotation**](https://storage.googleapis.com/openimages/v6/oidv6-train-annotations-bbox.csv) files of the subset and put them in the dataset folder.
+5. Config the right path in [`/dataset/data_selector.py`](./dataset/data_selector.py) to generate 2 files:
+  * a file containing image id to be downloaded.
+  * a file which is the small version of the annotation file.
+6. Run the [`/dataset/downloader.py`](./dataset/downloader.py) to download image into a folder.
+7. Start using the `notebook.py` file.
 
 # Project struture:
 * [`notebook.py`](./notebook.py): 
 * [`environment.yml`](./environment.yml): 
-* [`dataset/downloader.py`](./dataset/downloader.py): 
+* `dataset` module:
+  * [`dataset/downloader.py`](./dataset/downloader.py): 
+  * [`dataset/data_selector.py`](./dataset/data_selector.py): 
 * `frcnn` module:
   * [`frcnn/__init__.py`](./frcnn/__init__.py): 
   * [`frcnn/data.py`](./frcnn/data.py): 
