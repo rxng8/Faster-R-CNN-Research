@@ -13,6 +13,8 @@ dependencies:
   - backcall=0.2.0=pyhd3eb1b0_0
   - blas=1.0=mkl
   - blinker=1.4=py38_0
+  - boto3=1.17.46=pyhd3eb1b0_0
+  - botocore=1.20.50=pyhd3eb1b0_1
   - brotlipy=0.7.0=py38he774522_1000
   - ca-certificates=2020.12.5=h5b45459_0
   - cachetools=4.1.1=py_0
@@ -43,6 +45,7 @@ dependencies:
   - ipython_genutils=0.2.0=pyhd3eb1b0_1
   - jasper=2.0.14=h77af90b_2
   - jedi=0.17.0=py38_0
+  - jmespath=0.10.0=py_0
   - jpeg=9d=h8ffe710_0
   - jupyter_client=6.1.12=pyhd3eb1b0_0
   - jupyter_core=4.7.1=py38haa95532_0
@@ -116,6 +119,7 @@ dependencies:
   - requests=2.24.0=py_0
   - requests-oauthlib=1.3.0=py_0
   - rsa=4.6=py_0
+  - s3transfer=0.3.3=py38_0
   - scipy=1.6.2=py38h14eb087_0
   - setuptools=50.3.0=py38h9490d1a_1
   - six=1.15.0=py_0
@@ -128,6 +132,7 @@ dependencies:
   - termcolor=1.1.0=py38_1
   - tk=8.6.10=h8ffe710_1
   - tornado=6.1=py38h294d835_1
+  - tqdm=4.60.0=pyhd8ed1ab_0
   - traitlets=5.0.5=pyhd3eb1b0_0
   - urllib3=1.25.11=py_0
   - vc=14.2=h21ff451_1
