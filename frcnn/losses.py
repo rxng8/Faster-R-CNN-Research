@@ -7,7 +7,6 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras.losses import categorical_crossentropy
 
-from .data import get_new_img_size
 
 def union(au, bu, area_intersection):
 	area_a = (au[2] - au[0]) * (au[3] - au[1])
