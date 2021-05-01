@@ -29,7 +29,9 @@ class Config:
 
         self.base_net_weights = None
 
-        self.img_scaling_factor = 1
+        # image channel-wise mean to subtract
+        self.img_channel_mean = [103.939, 116.779, 123.68]
+        self.img_scaling_factor = 1.0
 
         # stride at the RPN (this depends on the network configuration)
         self.rpn_stride = 16
