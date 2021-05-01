@@ -48,13 +48,48 @@ C.rot_90 = True           # Augment with 90 degree rotations in training.
 
 # These configs are temporary configs
 
-BASE_PATH = ""
-ANNOTATION_PATH = ""
+BASE_PATH = "./dataset/open_image"
+ANNOTATION_PATH = "./dataset/train-annotations-bbox.csv"
 
 BATCH_SIZE = 32
 EPOCHS = 1
 
 train_path = ""
+
+# %%
+
+# data examining
+
+df = pd.read_csv(ANNOTATION_PATH)
+
+
+# %%
+
+df.head()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # %%
 
