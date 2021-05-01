@@ -65,69 +65,66 @@ train_path = ""
 # %%
 
 def get_data(C: Config):
-    """
+	"""
+	Returns:
+		List[Dict]: all_data: List[Dict[filepath, width, height, list(bboxes)]]. E.g:
+			[{'filepath': 'c4879393a7637d4b',
+			'width': 660,
+			'height': 1024,
+			'bboxes': [{'class': 'Shorts',
+				'xmin': 0.201746,
+				'xmax': 0.382153,
+				'ymin': 0.448125,
+				'ymax': 0.643125}, ...]
+		Dict[str, int]: classes_count
+	"""
+	found_bg = False
+	all_imgs = {}
+	classes_count = {}
+	class_mapping = {}
+	visualise = True
 
-    Returns:
-        List[Dict]: all_data: List[Dict[filepath, width, height, list(bboxes)]]. E.g:
-            [{'filepath': 'c4879393a7637d4b',
-            'width': 660,
-            'height': 1024,
-            'bboxes': [{'class': 'Shorts',
-                'xmin': 0.201746,
-                'xmax': 0.382153,
-                'ymin': 0.448125,
-                'ymax': 0.643125}, ...]
-        Dict[str, int]: classes_count
-    """
-    found_bg = False
-    all_imgs = {}
-    classes_count = {}
-    class_mapping = {}
-    visualise = True
+	df = pd.read_csv(C.annotation_path)
+	df_new = df[['ImageID', 'XMin', 'XMax', 'YMin', 'YMax', 'ClassName']]
 
-    df = pd.read_csv(C.annotation_path)
-    df_new = df[['ImageID', 'XMin', 'XMax', 'YMin', 'YMax', 'ClassName']]
+	for i, row in df_new.iterrows():
+		[filename, xmin, xmax, ymin, ymax, class_name] = row.to_numpy()
+		if class_name not in classes_count:
+			classes_count[class_name] = 1
+		else:
+			classes_count[class_name] += 1
 
-    for i, row in df_new.iterrows():
-        [filename, xmin, xmax, ymin, ymax, class_name] = row.to_numpy()
-        if class_name not in classes_count:
-            classes_count[class_name] = 1
-        else:
-            classes_count[class_name] += 1
-
-        if filename not in all_imgs:
-            all_imgs[filename] = {}
+		if filename not in all_imgs:
+			all_imgs[filename] = {}
             
-            img = cv2.imread(os.path.join(C.img_folder, filename + C.img_extension))
-            # show_img(img)
-            (rows, cols) = img.shape[:2]
-            all_imgs[filename]['filepath'] = os.path.join(C.img_folder, filename + C.img_extension)
-            all_imgs[filename]['width'] = cols
-            all_imgs[filename]['height'] = rows
-            all_imgs[filename]['bboxes'] = []
-
-        all_imgs[filename]['bboxes'].append({
-            'class': class_name,
-            'xmin': xmin,
-            'xmax': xmax,
-            'ymin': ymin,
-            'ymax': ymax
-        })
-
-    all_data = []
-    for key in all_imgs:
-        all_data.append(all_imgs[key])  
-
-    return all_data, classes_count, class_mapping
-
+			img = cv2.imread(os.path.join(C.img_folder, filename + C.img_extension))
+			# show_img(img)
+			(rows, cols) = img.shape[:2]
+			all_imgs[filename]['filepath'] = os.path.join(C.img_folder, filename + C.img_extension)
+			all_imgs[filename]['width'] = cols
+			all_imgs[filename]['height'] = rows
+			all_imgs[filename]['bboxes'] = []
+		
+		all_imgs[filename]['bboxes'].append({
+			'class': class_name,
+			'xmin': xmin,
+			'xmax': xmax,
+			'ymin': ymin,
+			'ymax': ymax
+		})
+	
+	all_data = []
+	for key in all_imgs:
+		all_data.append(all_imgs[key])  
+	return all_data, classes_count, class_mapping
 
 all_data, classes_count, class_mapping = get_data(C)
 
 # %%
 
 def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_length_calc_function):
-    """ Copied from https://github.com/RockyXu66/Faster_RCNN_for_Open_Images_Dataset_Keras/blob/master/frcnn_train_vgg.ipynb
-    (Important part!) Calculate the rpn for all anchors 
+	""" Copied from https://github.com/RockyXu66/Faster_RCNN_for_Open_Images_Dataset_Keras/blob/master/frcnn_train_vgg.ipynb
+	(Important part!) Calculate the rpn for all anchors 
 		If feature map has shape 38x50=1900, there are 1900x9=17100 potential anchors
 		#! TODO: Figure out the range of the bbox
 	Args:
