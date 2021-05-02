@@ -50,75 +50,76 @@ C.horizontal_flips = True # Augment with horizontal flips in training.
 C.vertical_flips = True   # Augment with vertical flips in training. 
 C.rot_90 = True           # Augment with 90 degree rotations in training. 
 
-C.img_folder = "./dataset/open_image"
-C.annotation_path = "./dataset/train-annotations-bbox.csv"
-C.img_extension = ".jpg"
-
 # These configs are temporary configs
 
 BASE_PATH = "./dataset/open_image"
 ANNOTATION_PATH = "./dataset/train-annotations-bbox.csv"
-
+record_path = os.path.join("./models/", 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 BATCH_SIZE = 32
 EPOCHS = 1
 
 train_path = ""
 
+C.record_path = record_path
+C.img_folder = "./dataset/open_image"
+C.annotation_path = "./dataset/train-annotations-bbox.csv"
+C.img_extension = ".jpg"
+
 # %%
 
 def get_data(annotation_path: str):
-	"""
-	Returns:
-		List[Dict]: all_data: List[Dict[filepath, width, height, list(bboxes)]]. E.g:
-			[{'filepath': 'c4879393a7637d4b',
-			'width': 660,
-			'height': 1024,
-			'bboxes': [{'class': 'Shorts',
-				'xmin': 0.201746,
-				'xmax': 0.382153,
-				'ymin': 0.448125,
-				'ymax': 0.643125}, ...]
-		Dict[str, int]: classes_count
-	"""
-	found_bg = False
-	all_imgs = {}
-	classes_count = {}
-	class_mapping = {}
-	visualise = True
+    """
+    Returns:
+        List[Dict]: all_data: List[Dict[filepath, width, height, list(bboxes)]]. E.g:
+            [{'filepath': 'c4879393a7637d4b',
+            'width': 660,
+            'height': 1024,
+            'bboxes': [{'class': 'Shorts',
+                'xmin': 0.201746,
+                'xmax': 0.382153,
+                'ymin': 0.448125,
+                'ymax': 0.643125}, ...]
+        Dict[str, int]: classes_count
+    """
+    found_bg = False
+    all_imgs = {}
+    classes_count = {}
+    class_mapping = {}
+    visualise = True
 
-	df = pd.read_csv(annotation_path)
-	df_new = df[['ImageID', 'XMin', 'XMax', 'YMin', 'YMax', 'ClassName']]
+    df = pd.read_csv(annotation_path)
+    df_new = df[['ImageID', 'XMin', 'XMax', 'YMin', 'YMax', 'ClassName']]
 
-	for i, row in df_new.iterrows():
-		[filename, xmin, xmax, ymin, ymax, class_name] = row.to_numpy()
-		if class_name not in classes_count:
-			classes_count[class_name] = 1
-		else:
-			classes_count[class_name] += 1
+    for i, row in df_new.iterrows():
+        [filename, xmin, xmax, ymin, ymax, class_name] = row.to_numpy()
+        if class_name not in classes_count:
+            classes_count[class_name] = 1
+        else:
+            classes_count[class_name] += 1
 
-		if filename not in all_imgs:
-			all_imgs[filename] = {}
-            
-			img = cv2.imread(os.path.join(C.img_folder, filename + C.img_extension))
-			# show_img(img)
-			(rows, cols) = img.shape[:2]
-			all_imgs[filename]['filepath'] = os.path.join(C.img_folder, filename + C.img_extension)
-			all_imgs[filename]['width'] = cols
-			all_imgs[filename]['height'] = rows
-			all_imgs[filename]['bboxes'] = []
-		
-		all_imgs[filename]['bboxes'].append({
-			'class': class_name,
-			'xmin': xmin * float(cols),
-			'xmax': xmax * float(cols),
-			'ymin': ymin * float(rows),
-			'ymax': ymax * float(rows)
-		})
-	
-	all_data = []
-	for key in all_imgs:
-		all_data.append(all_imgs[key])  
-	return all_data, classes_count, class_mapping
+        if filename not in all_imgs:
+            all_imgs[filename] = {}
+
+            img = cv2.imread(os.path.join(C.img_folder, filename + C.img_extension))
+            # show_img(img)
+            (rows, cols) = img.shape[:2]
+            all_imgs[filename]['filepath'] = os.path.join(C.img_folder, filename + C.img_extension)
+            all_imgs[filename]['width'] = cols
+            all_imgs[filename]['height'] = rows
+            all_imgs[filename]['bboxes'] = []
+
+        all_imgs[filename]['bboxes'].append({
+            'class': class_name,
+            'xmin': xmin * float(cols),
+            'xmax': xmax * float(cols),
+            'ymin': ymin * float(rows),
+            'ymax': ymax * float(rows)
+        })
+
+    all_data = []
+    for key in all_imgs:
+        all_data.append(all_imgs[key])  
+    return all_data, classes_count, class_mapping
 
 # all_data, classes_count, class_mapping = get_data(C.annotation_path)
 
@@ -193,9 +194,9 @@ print(image_data)
 print('Number of positive anchors for this image: %d' % (debug_num_pos))
 if debug_num_pos==0:
     gt_x1, gt_x2 = image_data['bboxes'][0]['xmin']*(X.shape[2]/image_data['height']), \
-		image_data['bboxes'][0]['xmax']*(X.shape[2]/image_data['height'])
+        image_data['bboxes'][0]['xmax']*(X.shape[2]/image_data['height'])
     gt_y1, gt_y2 = image_data['bboxes'][0]['ymin']*(X.shape[1]/image_data['width']), \
-		image_data['bboxes'][0]['ymax']*(X.shape[1]/image_data['width'])
+        image_data['bboxes'][0]['ymax']*(X.shape[1]/image_data['width'])
     gt_x1, gt_y1, gt_x2, gt_y2 = int(gt_x1), int(gt_y1), int(gt_x2), int(gt_y2)
 
     img = debug_img.copy()
@@ -219,9 +220,9 @@ else:
     print('y_rpn_regr for positive anchor: {}'.format(regr[pos_regr[0][0],pos_regr[1][0],:]))
 
     gt_x1, gt_x2 = image_data['bboxes'][0]['xmin']*(X.shape[2]/image_data['width']), \
-		image_data['bboxes'][0]['xmax']*(X.shape[2]/image_data['width'])
+        image_data['bboxes'][0]['xmax']*(X.shape[2]/image_data['width'])
     gt_y1, gt_y2 = image_data['bboxes'][0]['ymin']*(X.shape[1]/image_data['height']), \
-		image_data['bboxes'][0]['ymax']*(X.shape[1]/image_data['height'])
+        image_data['bboxes'][0]['ymax']*(X.shape[1]/image_data['height'])
     gt_x1, gt_y1, gt_x2, gt_y2 = int(gt_x1), int(gt_y1), int(gt_x2), int(gt_y2)
 
     img = debug_img.copy()
@@ -290,29 +291,29 @@ rpn_classify_layer, rpn_regress_layer = rpn_network(num_anchors)
 rpn_cls_tensor = rpn_classify_layer(shared_layers_tensor)
 rpn_regr_tensor = rpn_regress_layer(shared_layers_tensor)
 
-# classifier_layer?
+classifier_cls_tensor, classifier_regr_tensor = classifier_layer(shared_layers_tensor, roi_input, C.num_rois, nb_classes=len(classes_count))
+
 
 model_rpn = Model(img_input, [rpn_cls_tensor, rpn_regr_tensor])
-# model_classifier = Model([img_input, roi_input], classifier)
+model_classifier = Model([img_input, roi_input], [classifier_cls_tensor, classifier_regr_tensor])
 
 # this is a model that holds both the RPN and the classifier, used to load/save weights for the models
-model_all = Model([img_input, roi_input], [rpn_cls_tensor, rpn_regr_tensor] + classifier)
+model_all = Model([img_input, roi_input], [rpn_cls_tensor, rpn_regr_tensor] + [classifier_cls_tensor, classifier_regr_tensor])
 
 # Because the google colab can only run the session several hours one time (then you need to connect again), 
 # we need to save the model and load the model to continue training
 if not os.path.isfile(C.model_path):
-	pass
-    # #If this is the begin of the training, load the pre-traind base network such as vgg-16
-    # try:
-    #     print('This is the first time of your training')
-    #     print('loading weights from {}'.format(C.base_net_weights))
-    #     model_rpn.load_weights(C.base_net_weights, by_name=True)
-    #     # model_classifier.load_weights(C.base_net_weights, by_name=True)
-    # except:
-    #     print('Could not load pretrained model weights. Weights can be found in the keras application folder \
-    #         https://github.com/fchollet/keras/tree/master/keras/applications')
-	# # Create the record.csv file to record losses, acc and mAP
-    # record_df = pd.DataFrame(columns=['mean_overlapping_bboxes', 'class_acc', 'loss_rpn_cls', 'loss_rpn_regr', 'loss_class_cls', 'loss_class_regr', 'curr_loss', 'elapsed_time', 'mAP'])
+    # If this is the begin of the training, load the pre-traind base network such as vgg-16
+    try:
+        print('This is the first time of your training')
+        print('loading weights from {}'.format(C.base_net_weights))
+        model_rpn.load_weights(C.base_net_weights, by_name=True)
+        # model_classifier.load_weights(C.base_net_weights, by_name=True)
+    except:
+        print('Could not load pretrained model weights. Weights can be found in the keras application folder \
+            https://github.com/fchollet/keras/tree/master/keras/applications')
+    # Create the record.csv file to record losses, acc and mAP
+    record_df = pd.DataFrame(columns=['mean_overlapping_bboxes', 'class_acc', 'loss_rpn_cls', 'loss_rpn_regr', 'loss_class_cls', 'loss_class_regr', 'curr_loss', 'elapsed_time', 'mAP'])
 else:
     # If this is a continued training, load the trained model from before
     print('Continue training based on previous trained model')
@@ -372,20 +373,20 @@ rpn_accuracy_for_epoch = []
 
 start_time = time.time()
 for epoch_num in range(num_epochs):
-	progbar = Progbar(epoch_length)
+    progbar = Progbar(epoch_length)
     print('Epoch {}/{}'.format(r_epochs + 1, total_epochs))
-    
+
     r_epochs += 1
-	while True:
+    while True:
         try:
-			if len(rpn_accuracy_rpn_monitor) == epoch_length and C.verbose:
+            if len(rpn_accuracy_rpn_monitor) == epoch_length and C.verbose:
                 mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
                 rpn_accuracy_rpn_monitor = []
-				# print('Average number of overlapping bounding boxes from RPN = {} for {} previous iterations'.format(mean_overlapping_bboxes, epoch_length))
+                # print('Average number of overlapping bounding boxes from RPN = {} for {} previous iterations'.format(mean_overlapping_bboxes, epoch_length))
                 if mean_overlapping_bboxes == 0:
                     print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
 
-			# Generate X (x_img) and label Y ([y_rpn_cls, y_rpn_regr])
+            # Generate X (x_img) and label Y ([y_rpn_cls, y_rpn_regr])
             X, Y, img_data, debug_img, debug_num_pos = next(data_gen_train)
 
             # Train rpn model and get loss value [_, loss_rpn_cls, loss_rpn_regr]
@@ -394,7 +395,7 @@ for epoch_num in range(num_epochs):
             # Get predicted rpn from rpn model [rpn_cls, rpn_regr]
             P_rpn = model_rpn.predict_on_batch(X)
 
-			# R: bboxes (shape=(300,4))
+            # R: bboxes (shape=(300,4))
             # Convert rpn layer to roi bboxes
             R = rpn_to_roi(P_rpn[0], P_rpn[1], C, K.image_dim_ordering(), use_regr=True, overlap_thresh=0.7, max_boxes=300)
             
@@ -404,13 +405,13 @@ for epoch_num in range(num_epochs):
             # Y2: corresponding labels and corresponding gt bboxes
             X2, Y1, Y2, IouS = calc_iou(R, img_data, C, class_mapping)
 
-			# If X2 is None means there are no matching bboxes
+            # If X2 is None means there are no matching bboxes
             if X2 is None:
                 rpn_accuracy_rpn_monitor.append(0)
                 rpn_accuracy_for_epoch.append(0)
                 continue
 
-			# Find out the positive anchors and negative anchors
+            # Find out the positive anchors and negative anchors
             neg_samples = np.where(Y1[0, :, -1] == 1)
             pos_samples = np.where(Y1[0, :, -1] == 0)
 
@@ -424,7 +425,7 @@ for epoch_num in range(num_epochs):
             else:
                 pos_samples = []
 
-			rpn_accuracy_rpn_monitor.append(len(pos_samples))
+            rpn_accuracy_rpn_monitor.append(len(pos_samples))
             rpn_accuracy_for_epoch.append((len(pos_samples)))
 
             if C.num_rois > 1:
@@ -451,7 +452,7 @@ for epoch_num in range(num_epochs):
                 else:
                     sel_samples = random.choice(pos_samples)
 
-			# training_data: [X, X2[:, sel_samples, :]]
+            # training_data: [X, X2[:, sel_samples, :]]
             # labels: [Y1[:, sel_samples, :], Y2[:, sel_samples, :]]
             #  X                     => img_data resized image
             #  X2[:, sel_samples, :] => num_rois (4 in here) bboxes which contains selected neg and pos
@@ -471,7 +472,7 @@ for epoch_num in range(num_epochs):
             progbar.update(iter_num, [('rpn_cls', np.mean(losses[:iter_num, 0])), ('rpn_regr', np.mean(losses[:iter_num, 1])),
                                     ('final_cls', np.mean(losses[:iter_num, 2])), ('final_regr', np.mean(losses[:iter_num, 3]))])
 
-			if iter_num == epoch_length:
+            if iter_num == epoch_length:
                 loss_rpn_cls = np.mean(losses[:, 0])
                 loss_rpn_regr = np.mean(losses[:, 1])
                 loss_class_cls = np.mean(losses[:, 2])
@@ -495,8 +496,8 @@ for epoch_num in range(num_epochs):
                 curr_loss = loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr
                 iter_num = 0
                 start_time = time.time()
-			
-				if curr_loss < best_loss:
+
+                if curr_loss < best_loss:
                     if C.verbose:
                         print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
                     best_loss = curr_loss
@@ -517,8 +518,8 @@ for epoch_num in range(num_epochs):
 
                 break
 
-		except Exception as e:
+        except Exception as e:
             print('Exception: {}'.format(e))
             continue
-		
+
 print('Training complete, exiting.')

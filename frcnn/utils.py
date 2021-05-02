@@ -40,7 +40,7 @@ def non_max_suppression_fast(boxes, probs, overlap_thresh=0.9, max_boxes=300):
     if boxes.dtype.kind == "i":
         boxes = boxes.astype("float")
 
-    # initialize the list of picked indexes	
+    # initialize the list of picked indexes    
     pick = []
 
     # calculate the areas
