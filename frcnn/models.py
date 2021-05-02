@@ -15,7 +15,7 @@ from tensorflow.keras.layers import \
 
 from .utils import non_max_suppression_fast, get_img_output_length, apply_regr_np, apply_regr, calc_iou
 
-def vgg_base(img_shape=(800, 600, 3), verbose=False):
+def vgg_base(img_shape=(None, None, 3), trainable=False, verbose=False):
     """ Generate a VGG model
 
     Args:
@@ -30,12 +30,14 @@ def vgg_base(img_shape=(800, 600, 3), verbose=False):
         include_top=False,
         weights='imagenet'
     )
+    base_model.trainable = trainable
     # Get all the layers except for the last layer.
     model = Model(
         inputs=base_model.input,
         outputs=base_model.get_layer('block5_conv3').output,
         name='base_model'
     )
+    model.trainable = trainable
     if verbose:
         model.summary()
     return model
@@ -254,7 +256,7 @@ class RoiPoolingConv(Layer):
     
     def get_config(self):
         config = {'pool_size': self.pool_size,
-                  'num_rois': self.num_rois}
+                    'num_rois': self.num_rois}
         base_config = super(RoiPoolingConv, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 

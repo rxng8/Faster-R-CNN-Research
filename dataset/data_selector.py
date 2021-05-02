@@ -2,6 +2,7 @@
 
 import os
 import pandas as pd
+import numpy as np
 import random
 
 # config parameters
@@ -32,39 +33,44 @@ CLASS_DICT = {}
 for c in CLASS_CODE:
     CLASS_DICT[c] = class_df.loc[class_df.loc[:, 'LabelName'].values == c, 'name'].to_numpy()[0]
 
-
 cond = False
 for code in CLASS_CODE:
     cond |= (df.loc[:, 'LabelName'].values == code)
 
-new_df = df.loc[cond]
-new_df = new_df.reset_index(drop=True)
+class_filter_df = df.loc[cond]
+class_filter_df = class_filter_df.reset_index(drop=True)
+
+img_id_unique_list = class_filter_df.loc[:, 'ImageID'].unique()
+
+# %%
+
+img_id_sample = np.random.choice(img_id_unique_list, size=n_instance, replace=False)
+img_id_sample_train = img_id_sample[:n_train]
+img_id_sample_test = img_id_sample[n_train:]
 
 
-assert n_instance <= new_df.shape[0], "Random sampling need to have large enough size or small enough n_instance"
+# %%
 
-r_list = random.sample(range(0, new_df.shape[0] - 1), n_instance)
-r_list_train = r_list[:n_train]
-r_list_test = r_list[n_train:]
+cond = False
+for img_id in img_id_sample:
+    cond |= (class_filter_df.loc[:, 'ImageID'] == img_id)
+
+img_cls_filter_df = class_filter_df.loc[cond]
 
 
-
-new_df = new_df.iloc[r_list]
-
+# %%
 
 name = []
-for i, row in new_df.iterrows():
+for i, row in img_cls_filter_df.iterrows():
     name.append(CLASS_DICT[row.loc["LabelName"]])
 
-new_df.insert(3, "ClassName", name, True)
+img_cls_filter_df.insert(3, "ClassName", name, True)
+img_cls_filter_df.to_csv(NEW_CSV_PATH, index=False)
 
-
-new_df.to_csv(NEW_CSV_PATH, index=False)
-
+# %%
 
 # Write files
 with open(COLLECT_DATA_WRITE_FILE, "w") as f:
-    f.writelines(['train/' + new_df.loc[r, 'ImageID'] + '\n' for r in r_list_train])
-    f.writelines(['train/' + new_df.loc[r, 'ImageID'] + '\n' for r in r_list_test])
-
+    f.writelines(['train/' + id + '\n' for id in img_id_sample_train])
+    f.writelines(['train/' + id + '\n' for id in img_id_sample_test])
 

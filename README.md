@@ -20,7 +20,7 @@ As the title, this repo is for Faster R-CNN implementation.
   * a folder containing the images to be downloaded (`open_image` in this case).
 6. Run the [`/dataset/downloader.py`](./dataset/downloader.py) to download image into a folder.
 ```
-# Cahnge directory to dataset folder.
+# Change directory to dataset folder.
 cd dataset
 # For the case we want to use 2 processor.
 python downloader.py data.txt --download_folder=open_image --num_processes=2
