@@ -27,7 +27,7 @@ from tensorflow.keras.utils import Progbar
 
 from frcnn import Config
 from frcnn.models import vgg_base, rpn_network, classifier_layer, rpn_to_roi
-from frcnn.data import data_generator, 
+from frcnn.data import data_generator
 from frcnn.utils import get_img_output_length, show_img, calc_iou
 from frcnn.losses import rpn_loss_cls, rpn_loss_regr, class_loss_cls, class_loss_regr
 
@@ -61,6 +61,7 @@ EPOCHS = 1
 train_path = ""
 
 C.record_path = record_path
+C.model_path = ""
 C.img_folder = "./dataset/open_image"
 C.annotation_path = "./dataset/train-annotations-bbox.csv"
 C.img_extension = ".jpg"
@@ -85,7 +86,7 @@ def get_data(annotation_path: str):
     all_imgs = {}
     classes_count = {}
     class_mapping = {}
-    visualise = True
+    visualize = True
 
     df = pd.read_csv(annotation_path)
     df_new = df[['ImageID', 'XMin', 'XMax', 'YMin', 'YMax', 'ClassName']]
@@ -96,6 +97,12 @@ def get_data(annotation_path: str):
             classes_count[class_name] = 1
         else:
             classes_count[class_name] += 1
+
+        if class_name not in class_mapping:
+            if class_name == 'bg' and found_bg == False:
+                print('Found class name with special name bg. Will be treated as a background region (this is usually for hard negative mining).')
+                found_bg = True
+            class_mapping[class_name] = len(class_mapping)
 
         if filename not in all_imgs:
             all_imgs[filename] = {}
@@ -118,7 +125,22 @@ def get_data(annotation_path: str):
 
     all_data = []
     for key in all_imgs:
-        all_data.append(all_imgs[key])  
+        all_data.append(all_imgs[key])
+
+    # make sure the bg class is last in the list
+    if found_bg:
+        if class_mapping['bg'] != len(class_mapping) - 1:
+            key_to_switch = [key for key in class_mapping.keys() if class_mapping[key] == len(class_mapping)-1][0]
+            val_to_switch = class_mapping['bg']
+            class_mapping['bg'] = len(class_mapping) - 1
+            class_mapping[key_to_switch] = val_to_switch
+    else:
+        class_mapping['bg'] = len(class_mapping)
+
+    #! HOTFIX: have to add the class bg to the class count
+    # because we also have to predict the class bg
+    classes_count['bg'] = 0
+
     return all_data, classes_count, class_mapping
 
 # all_data, classes_count, class_mapping = get_data(C.annotation_path)
@@ -171,8 +193,6 @@ train_imgs, classes_count, class_mapping = get_data(C.annotation_path)
 print()
 print('Spend %0.2f mins to load the data' % ((time.time()-st)/60) )
 
-# %%
-
 # Get train data generator which generate X, Y, image_data
 data_gen_train = data_generator(train_imgs, C, get_img_output_length, mode='train')
 
@@ -183,7 +203,7 @@ data_gen_train = data_generator(train_imgs, C, get_img_output_length, mode='trai
 X, Y, image_data, debug_img, debug_num_pos = next(data_gen_train)
 
 print('Original image: height=%d width=%d'%(image_data['height'], image_data['width']))
-print('Resized image:  height=%d width=%d C.im_size=%d'%(X.shape[1], X.shape[2], C.img_min_side))
+print('Resized image:  height=%d width=%d C.img_min_size=%d'%(X.shape[1], X.shape[2], C.img_min_side))
 print('Feature map size: height=%d width=%d C.rpn_stride=%d'%(Y[0].shape[1], Y[0].shape[2], C.rpn_stride))
 print(X.shape)
 print(str(len(Y))+" includes 'y_rpn_cls' and 'y_rpn_regr'")
@@ -254,7 +274,7 @@ else:
         cv2.circle(img, center, 3, color, -1)
         anc_w, anc_h = anchor_size*anchor_ratio[0], anchor_size*anchor_ratio[1]
         cv2.rectangle(img, (center[0]-int(anc_w/2), center[1]-int(anc_h/2)), (center[0]+int(anc_w/2), center[1]+int(anc_h/2)), color, 2)
-#         cv2.putText(img, 'pos anchor bbox '+str(i+1), (center[0]-int(anc_w/2), center[1]-int(anc_h/2)-5), cv2.FONT_HERSHEY_DUPLEX, 0.5, color, 1)
+        # cv2.putText(img, 'pos anchor bbox '+str(i+1), (center[0]-int(anc_w/2), center[1]-int(anc_h/2)-5), cv2.FONT_HERSHEY_DUPLEX, 0.5, color, 1)
 
 print('Green bboxes is ground-truth bbox. Others are positive anchors')
 plt.figure(figsize=(8,8))
@@ -262,19 +282,10 @@ plt.grid()
 plt.imshow(img)
 plt.show()
 
-# %%
-
-
-
-
 
 # %%
 
 ## Train models.
-
-
-# %%
-
 
 input_shape_img = (None, None, 3)
 
@@ -302,12 +313,12 @@ model_all = Model([img_input, roi_input], [rpn_cls_tensor, rpn_regr_tensor] + [c
 
 # Because the google colab can only run the session several hours one time (then you need to connect again), 
 # we need to save the model and load the model to continue training
-if not os.path.isfile(C.model_path):
+if not os.path.exists(C.model_path):
     # If this is the begin of the training, load the pre-traind base network such as vgg-16
     try:
         print('This is the first time of your training')
-        print('loading weights from {}'.format(C.base_net_weights))
-        model_rpn.load_weights(C.base_net_weights, by_name=True)
+        # print('loading weights from {}'.format(C.base_net_weights))
+        # model_rpn.load_weights(C.base_net_weights, by_name=True)
         # model_classifier.load_weights(C.base_net_weights, by_name=True)
     except:
         print('Could not load pretrained model weights. Weights can be found in the keras application folder \
@@ -378,148 +389,158 @@ for epoch_num in range(num_epochs):
 
     r_epochs += 1
     while True:
-        try:
-            if len(rpn_accuracy_rpn_monitor) == epoch_length and C.verbose:
-                mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
-                rpn_accuracy_rpn_monitor = []
-                # print('Average number of overlapping bounding boxes from RPN = {} for {} previous iterations'.format(mean_overlapping_bboxes, epoch_length))
-                if mean_overlapping_bboxes == 0:
-                    print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
+        # try:
+        if len(rpn_accuracy_rpn_monitor) == epoch_length and C.verbose:
+            mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
+            rpn_accuracy_rpn_monitor = []
+            # print('Average number of overlapping bounding boxes from RPN = {} for {} previous iterations'.format(mean_overlapping_bboxes, epoch_length))
+            if mean_overlapping_bboxes == 0:
+                print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
 
-            # Generate X (x_img) and label Y ([y_rpn_cls, y_rpn_regr])
-            X, Y, img_data, debug_img, debug_num_pos = next(data_gen_train)
+        # Generate X (x_img) and label Y ([y_rpn_cls, y_rpn_regr])
+        X, Y, img_data, debug_img, debug_num_pos = next(data_gen_train)
 
-            # Train rpn model and get loss value [_, loss_rpn_cls, loss_rpn_regr]
-            loss_rpn = model_rpn.train_on_batch(X, Y)
+        # print("Generated data!")
 
-            # Get predicted rpn from rpn model [rpn_cls, rpn_regr]
-            P_rpn = model_rpn.predict_on_batch(X)
+        # Train rpn model and get loss value [_, loss_rpn_cls, loss_rpn_regr]
+        loss_rpn = model_rpn.train_on_batch(X, Y)
 
-            # R: bboxes (shape=(300,4))
-            # Convert rpn layer to roi bboxes
-            R = rpn_to_roi(P_rpn[0], P_rpn[1], C, K.image_dim_ordering(), use_regr=True, overlap_thresh=0.7, max_boxes=300)
-            
-            # note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
-            # X2: bboxes that iou > C.classifier_min_overlap for all gt bboxes in 300 non_max_suppression bboxes
-            # Y1: one hot code for bboxes from above => x_roi (X)
-            # Y2: corresponding labels and corresponding gt bboxes
-            X2, Y1, Y2, IouS = calc_iou(R, img_data, C, class_mapping)
+        # print("Trained loss rpn!")
 
-            # If X2 is None means there are no matching bboxes
-            if X2 is None:
-                rpn_accuracy_rpn_monitor.append(0)
-                rpn_accuracy_for_epoch.append(0)
-                continue
+        # Get predicted rpn from rpn model [rpn_cls, rpn_regr]
+        P_rpn = model_rpn.predict_on_batch(X)
 
-            # Find out the positive anchors and negative anchors
-            neg_samples = np.where(Y1[0, :, -1] == 1)
-            pos_samples = np.where(Y1[0, :, -1] == 0)
+        # R: bboxes (shape=(300,4))
+        # Convert rpn layer to roi bboxes
+        R = rpn_to_roi(P_rpn[0], P_rpn[1], C, use_regr=True, overlap_thresh=0.7, max_boxes=300)
 
-            if len(neg_samples) > 0:
-                neg_samples = neg_samples[0]
-            else:
-                neg_samples = []
+        # note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
+        # X2: bboxes that iou > C.classifier_min_overlap for all gt bboxes in 300 non_max_suppression bboxes
+        # Y1: one hot code for bboxes from above => x_roi (X)
+        # Y2: corresponding labels and corresponding gt bboxes
+        X2, Y1, Y2, IouS = calc_iou(R, img_data, C, class_mapping)
+        
+        # print("calc iou success")
 
-            if len(pos_samples) > 0:
-                pos_samples = pos_samples[0]
-            else:
-                pos_samples = []
-
-            rpn_accuracy_rpn_monitor.append(len(pos_samples))
-            rpn_accuracy_for_epoch.append((len(pos_samples)))
-
-            if C.num_rois > 1:
-                # If number of positive anchors is larger than 4//2 = 2, randomly choose 2 pos samples
-                if len(pos_samples) < C.num_rois//2:
-                    selected_pos_samples = pos_samples.tolist()
-                else:
-                    selected_pos_samples = np.random.choice(pos_samples, C.num_rois//2, replace=False).tolist()
-                
-                # Randomly choose (num_rois - num_pos) neg samples
-                try:
-                    selected_neg_samples = np.random.choice(neg_samples, C.num_rois - len(selected_pos_samples), replace=False).tolist()
-                except:
-                    selected_neg_samples = np.random.choice(neg_samples, C.num_rois - len(selected_pos_samples), replace=True).tolist()
-                
-                # Save all the pos and neg samples in sel_samples
-                sel_samples = selected_pos_samples + selected_neg_samples
-            else:
-                # in the extreme case where num_rois = 1, we pick a random pos or neg sample
-                selected_pos_samples = pos_samples.tolist()
-                selected_neg_samples = neg_samples.tolist()
-                if np.random.randint(0, 2):
-                    sel_samples = random.choice(neg_samples)
-                else:
-                    sel_samples = random.choice(pos_samples)
-
-            # training_data: [X, X2[:, sel_samples, :]]
-            # labels: [Y1[:, sel_samples, :], Y2[:, sel_samples, :]]
-            #  X                     => img_data resized image
-            #  X2[:, sel_samples, :] => num_rois (4 in here) bboxes which contains selected neg and pos
-            #  Y1[:, sel_samples, :] => one hot encode for num_rois bboxes which contains selected neg and pos
-            #  Y2[:, sel_samples, :] => labels and gt bboxes for num_rois bboxes which contains selected neg and pos
-            loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
-
-            losses[iter_num, 0] = loss_rpn[1]
-            losses[iter_num, 1] = loss_rpn[2]
-
-            losses[iter_num, 2] = loss_class[1]
-            losses[iter_num, 3] = loss_class[2]
-            losses[iter_num, 4] = loss_class[3]
-
-            iter_num += 1
-
-            progbar.update(iter_num, [('rpn_cls', np.mean(losses[:iter_num, 0])), ('rpn_regr', np.mean(losses[:iter_num, 1])),
-                                    ('final_cls', np.mean(losses[:iter_num, 2])), ('final_regr', np.mean(losses[:iter_num, 3]))])
-
-            if iter_num == epoch_length:
-                loss_rpn_cls = np.mean(losses[:, 0])
-                loss_rpn_regr = np.mean(losses[:, 1])
-                loss_class_cls = np.mean(losses[:, 2])
-                loss_class_regr = np.mean(losses[:, 3])
-                class_acc = np.mean(losses[:, 4])
-
-                mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
-                rpn_accuracy_for_epoch = []
-
-                if C.verbose:
-                    print('Mean number of bounding boxes from RPN overlapping ground truth boxes: {}'.format(mean_overlapping_bboxes))
-                    print('Classifier accuracy for bounding boxes from RPN: {}'.format(class_acc))
-                    print('Loss RPN classifier: {}'.format(loss_rpn_cls))
-                    print('Loss RPN regression: {}'.format(loss_rpn_regr))
-                    print('Loss Detector classifier: {}'.format(loss_class_cls))
-                    print('Loss Detector regression: {}'.format(loss_class_regr))
-                    print('Total loss: {}'.format(loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr))
-                    print('Elapsed time: {}'.format(time.time() - start_time))
-                    elapsed_time = (time.time()-start_time)/60
-
-                curr_loss = loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr
-                iter_num = 0
-                start_time = time.time()
-
-                if curr_loss < best_loss:
-                    if C.verbose:
-                        print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
-                    best_loss = curr_loss
-                    model_all.save_weights(C.model_path)
-
-                new_row = {'mean_overlapping_bboxes':round(mean_overlapping_bboxes, 3), 
-                        'class_acc':round(class_acc, 3), 
-                        'loss_rpn_cls':round(loss_rpn_cls, 3), 
-                        'loss_rpn_regr':round(loss_rpn_regr, 3), 
-                        'loss_class_cls':round(loss_class_cls, 3), 
-                        'loss_class_regr':round(loss_class_regr, 3), 
-                        'curr_loss':round(curr_loss, 3), 
-                        'elapsed_time':round(elapsed_time, 3), 
-                        'mAP': 0}
-
-                record_df = record_df.append(new_row, ignore_index=True)
-                record_df.to_csv(record_path, index=0)
-
-                break
-
-        except Exception as e:
-            print('Exception: {}'.format(e))
+        # If X2 is None means there are no matching bboxes
+        if X2 is None:
+            rpn_accuracy_rpn_monitor.append(0)
+            rpn_accuracy_for_epoch.append(0)
             continue
 
+        # Find out the positive anchors and negative anchors
+        neg_samples = np.where(Y1[0, :, -1] == 1)
+        pos_samples = np.where(Y1[0, :, -1] == 0)
+
+        if len(neg_samples) > 0:
+            neg_samples = neg_samples[0]
+        else:
+            neg_samples = []
+
+        if len(pos_samples) > 0:
+            pos_samples = pos_samples[0]
+        else:
+            pos_samples = []
+
+        rpn_accuracy_rpn_monitor.append(len(pos_samples))
+        rpn_accuracy_for_epoch.append((len(pos_samples)))
+
+        if C.num_rois > 1:
+            # If number of positive anchors is larger than 4//2 = 2, randomly choose 2 pos samples
+            if len(pos_samples) < C.num_rois//2:
+                selected_pos_samples = pos_samples.tolist()
+            else:
+                selected_pos_samples = np.random.choice(pos_samples, C.num_rois//2, replace=False).tolist()
+            
+            # Randomly choose (num_rois - num_pos) neg samples
+            try:
+                selected_neg_samples = np.random.choice(neg_samples, C.num_rois - len(selected_pos_samples), replace=False).tolist()
+            except:
+                selected_neg_samples = np.random.choice(neg_samples, C.num_rois - len(selected_pos_samples), replace=True).tolist()
+            
+            # Save all the pos and neg samples in sel_samples
+            sel_samples = selected_pos_samples + selected_neg_samples
+        else:
+            # in the extreme case where num_rois = 1, we pick a random pos or neg sample
+            selected_pos_samples = pos_samples.tolist()
+            selected_neg_samples = neg_samples.tolist()
+            if np.random.randint(0, 2):
+                sel_samples = random.choice(neg_samples)
+            else:
+                sel_samples = random.choice(pos_samples)
+
+        # training_data: [X, X2[:, sel_samples, :]]
+        # labels: [Y1[:, sel_samples, :], Y2[:, sel_samples, :]]
+        #  X                     => img_data resized image
+        #  X2[:, sel_samples, :] => num_rois (4 in here) bboxes which contains selected neg and pos
+        #  Y1[:, sel_samples, :] => one hot encode for num_rois bboxes which contains selected neg and pos
+        #  Y2[:, sel_samples, :] => labels and gt bboxes for num_rois bboxes which contains selected neg and pos
+        loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
+
+        losses[iter_num, 0] = loss_rpn[1]
+        losses[iter_num, 1] = loss_rpn[2]
+
+        losses[iter_num, 2] = loss_class[1]
+        losses[iter_num, 3] = loss_class[2]
+        losses[iter_num, 4] = loss_class[3]
+
+        iter_num += 1
+
+        progbar.update(iter_num, [('rpn_cls', np.mean(losses[:iter_num, 0])), ('rpn_regr', np.mean(losses[:iter_num, 1])),
+                                ('final_cls', np.mean(losses[:iter_num, 2])), ('final_regr', np.mean(losses[:iter_num, 3]))])
+
+        if iter_num == epoch_length:
+            loss_rpn_cls = np.mean(losses[:, 0])
+            loss_rpn_regr = np.mean(losses[:, 1])
+            loss_class_cls = np.mean(losses[:, 2])
+            loss_class_regr = np.mean(losses[:, 3])
+            class_acc = np.mean(losses[:, 4])
+
+            mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
+            rpn_accuracy_for_epoch = []
+
+            if C.verbose:
+                print('Mean number of bounding boxes from RPN overlapping ground truth boxes: {}'.format(mean_overlapping_bboxes))
+                print('Classifier accuracy for bounding boxes from RPN: {}'.format(class_acc))
+                print('Loss RPN classifier: {}'.format(loss_rpn_cls))
+                print('Loss RPN regression: {}'.format(loss_rpn_regr))
+                print('Loss Detector classifier: {}'.format(loss_class_cls))
+                print('Loss Detector regression: {}'.format(loss_class_regr))
+                print('Total loss: {}'.format(loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr))
+                print('Elapsed time: {}'.format(time.time() - start_time))
+                elapsed_time = (time.time()-start_time)/60
+
+            curr_loss = loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr
+            iter_num = 0
+            start_time = time.time()
+
+            if curr_loss < best_loss:
+                if C.verbose:
+                    print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
+                best_loss = curr_loss
+                model_all.save_weights(C.model_path)
+
+            new_row = {'mean_overlapping_bboxes':round(mean_overlapping_bboxes, 3), 
+                    'class_acc':round(class_acc, 3), 
+                    'loss_rpn_cls':round(loss_rpn_cls, 3), 
+                    'loss_rpn_regr':round(loss_rpn_regr, 3), 
+                    'loss_class_cls':round(loss_class_cls, 3), 
+                    'loss_class_regr':round(loss_class_regr, 3), 
+                    'curr_loss':round(curr_loss, 3), 
+                    'elapsed_time':round(elapsed_time, 3), 
+                    'mAP': 0}
+
+            record_df = record_df.append(new_row, ignore_index=True)
+            record_df.to_csv(record_path, index=0)
+
+            break
+
+        # except Exception as e:
+        #     print(f"Exception: {e}")
+        #     continue
+
 print('Training complete, exiting.')
+
+
+
+# %%

@@ -18,8 +18,8 @@ def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_leng
         img_data: augmented image data, expecting x, y coordinates to have range [0, 1]
         width: original image width (e.g. 600)
         height: original image height (e.g. 800)
-        resized_width: resized image width according to C.im_size (e.g. 300)
-        resized_height: resized image height according to C.im_size (e.g. 400)
+        resized_width: resized image width according to C.img_min_side (e.g. 300)
+        resized_height: resized image height according to C.img_min_side (e.g. 400)
         img_length_calc_function: function to calculate final layer's feature map (of base model) size according to input image size
 
     Returns:
@@ -280,7 +280,7 @@ def data_generator(all_img_data, C, img_length_calc_function, mode='train'):
                 yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug, debug_img, num_pos
 
             except Exception as e:
-                print(e)
+                print("Generator Error:", e)
                 continue
 
 def get_new_img_size(width, height, img_min_side=300):

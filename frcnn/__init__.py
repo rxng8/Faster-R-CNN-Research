@@ -5,6 +5,8 @@ from . import *
 class Config:
     def __init__(self) -> None:
         
+        self.verbose = False
+
         self.img_folder = None
         self.annotation_path = None
         self.img_extension = ".jpg"

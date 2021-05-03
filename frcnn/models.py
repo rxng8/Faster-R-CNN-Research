@@ -73,7 +73,7 @@ def rpn_network(n_anchors=9):
     return [classify_layer, regress_layer]
 
 
-def rpn_to_roi(rpn_layer, regr_layer, C, dim_ordering, use_regr=True, max_boxes=300,overlap_thresh=0.9):
+def rpn_to_roi(rpn_layer, regr_layer, C, use_regr=True, max_boxes=300,overlap_thresh=0.9):
     """Convert rpn layer to roi bboxes
 
     Args: (num_anchors = 9)
@@ -199,11 +199,10 @@ class RoiPoolingConv(Layer):
     '''
     def __init__(self, pool_size, num_rois, **kwargs):
 
-        self.dim_ordering = K.image_dim_ordering()
         self.pool_size = pool_size
         self.num_rois = num_rois
 
-        super(RoiPoolingConv, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def build(self, input_shape):
         self.nb_channels = input_shape[0][3]   
@@ -238,7 +237,7 @@ class RoiPoolingConv(Layer):
             h = K.cast(h, 'int32')
 
             # Resized roi of the image to pooling size (7x7)
-            rs = tf.image.resize_images(img[:, y:y+h, x:x+w, :], (self.pool_size, self.pool_size))
+            rs = tf.image.resize(img[:, y:y+h, x:x+w, :], (self.pool_size, self.pool_size))
             outputs.append(rs)
                 
 

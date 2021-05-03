@@ -3,6 +3,8 @@ import math
 import copy
 import matplotlib.pyplot as plt
 
+import tensorflow as tf
+
 from .data import get_new_img_size
 from .losses import iou
 
@@ -125,7 +127,7 @@ def apply_regr_np(X, T):
         h1 = np.round(h1)
         return np.stack([x1, y1, w1, h1])
     except Exception as e:
-        print(e)
+        print("Regr apply error:", e)
         return X
     
 def apply_regr(x, y, w, h, tx, ty, tw, th):
@@ -151,7 +153,7 @@ def apply_regr(x, y, w, h, tx, ty, tw, th):
     except OverflowError:
         return x, y, w, h
     except Exception as e:
-        print(e)
+        print("Regr error", e)
         return x, y, w, h
 
 def calc_iou(R, img_data, C, class_mapping):
@@ -163,17 +165,17 @@ def calc_iou(R, img_data, C, class_mapping):
     bboxes = img_data['bboxes']
     (width, height) = (img_data['width'], img_data['height'])
     # get image dimensions for resizing
-    (resized_width, resized_height) = get_new_img_size(width, height, C.im_size)
+    (resized_width, resized_height) = get_new_img_size(width, height, C.img_min_side)
 
     gta = np.zeros((len(bboxes), 4))
 
     for bbox_num, bbox in enumerate(bboxes):
         # get the GT box coordinates, and resize to account for image resizing
         # gta[bbox_num, 0] = (40 * (600 / 800)) / 16 = int(round(1.875)) = 2 (x in feature map)
-        gta[bbox_num, 0] = int(round(bbox['x1'] * (resized_width / float(width))/C.rpn_stride))
-        gta[bbox_num, 1] = int(round(bbox['x2'] * (resized_width / float(width))/C.rpn_stride))
-        gta[bbox_num, 2] = int(round(bbox['y1'] * (resized_height / float(height))/C.rpn_stride))
-        gta[bbox_num, 3] = int(round(bbox['y2'] * (resized_height / float(height))/C.rpn_stride))
+        gta[bbox_num, 0] = int(round(bbox['xmin'] * (resized_width / float(width))/C.rpn_stride))
+        gta[bbox_num, 1] = int(round(bbox['xmax'] * (resized_width / float(width))/C.rpn_stride))
+        gta[bbox_num, 2] = int(round(bbox['ymin'] * (resized_height / float(height))/C.rpn_stride))
+        gta[bbox_num, 3] = int(round(bbox['ymax'] * (resized_height / float(height))/C.rpn_stride))
 
     x_roi = []
     y_class_num = []
@@ -248,11 +250,11 @@ def calc_iou(R, img_data, C, class_mapping):
         return None, None, None, None
 
     # bboxes that iou > C.classifier_min_overlap for all gt bboxes in 300 non_max_suppression bboxes
-    X = np.array(x_roi)
+    X = tf.cast(np.array(x_roi), tf.float32)
     # one hot code for bboxes from above => x_roi (X)
-    Y1 = np.array(y_class_num)
+    Y1 = tf.cast(np.array(y_class_num), tf.float32)
     # corresponding labels and corresponding gt bboxes
-    Y2 = np.concatenate([np.array(y_class_regr_label),np.array(y_class_regr_coords)],axis=1)
+    Y2 = tf.cast(np.concatenate([np.array(y_class_regr_label),np.array(y_class_regr_coords)],axis=1), tf.float32)
 
     return np.expand_dims(X, axis=0), np.expand_dims(Y1, axis=0), np.expand_dims(Y2, axis=0), IoUs
 
