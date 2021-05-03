@@ -83,9 +83,10 @@ def rpn_loss_cls(num_anchors):
         lambda * sum((binary_crossentropy(isValid*y_pred,y_true))) / N
     """
     def rpn_loss_cls_fixed_num(y_true, y_pred):
-
+        # print(y_true.shape) # (1,33,18,18)
+        # print(y_pred.shape) # (1,33,18,9)
         return lambda_rpn_class * tf.reduce_sum(y_true[:, :, :, :num_anchors] \
-            * binary_crossentropy(y_pred[:, :, :, :], y_true[:, :, :, num_anchors:])) \
+            * tf.expand_dims(binary_crossentropy(y_pred[:, :, :, :], y_true[:, :, :, num_anchors:]), axis=-1)) \
             / tf.reduce_sum(epsilon + y_true[:, :, :, :num_anchors])
 
     return rpn_loss_cls_fixed_num
@@ -104,10 +105,12 @@ def class_loss_regr(num_classes):
         x = y_true[:, :, 4*num_classes:] - y_pred
         x_abs = tf.math.abs(x)
         x_bool = tf.cast(tf.math.less_equal(x_abs, 1.0), tf.float32)
-        return lambda_cls_regr * tf.reduce_sum(y_true[:, :, :4*num_classes] * (x_bool * (0.5 * x * x) + (1 - x_bool) * (x_abs - 0.5))) / tf.reduce_sum(epsilon + y_true[:, :, :4*num_classes])
+        return lambda_cls_regr * tf.reduce_sum(y_true[:, :, :4*num_classes] \
+            * (x_bool * (0.5 * x * x) + (1 - x_bool) * (x_abs - 0.5))) \
+            / tf.reduce_sum(epsilon + y_true[:, :, :4*num_classes])
     return class_loss_regr_fixed_num
 
 
 def class_loss_cls(y_true, y_pred):
-    # return lambda_cls_class * tf.reduce_mean(categorical_crossentropy(y_true[0, :, :], y_pred[0, :, :]))
-    return lambda_cls_class * K.mean(categorical_crossentropy(y_true[0, :, :], y_pred[0, :, :]))
+    return lambda_cls_class * tf.reduce_mean(categorical_crossentropy(y_true[0, :, :], y_pred[0, :, :]))
+    # return lambda_cls_class * K.mean(categorical_crossentropy(y_true[0, :, :], y_pred[0, :, :]))
