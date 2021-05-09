@@ -352,7 +352,11 @@ else:
 optimizer = Adam(lr=1e-5)
 optimizer_classifier = Adam(lr=1e-5)
 model_rpn.compile(optimizer=optimizer, loss=[rpn_loss_cls(num_anchors), rpn_loss_regr(num_anchors)])
-model_classifier.compile(optimizer=optimizer_classifier, loss=[class_loss_cls, class_loss_regr(len(classes_count)-1)], metrics={'dense_class_{}'.format(len(classes_count)): 'accuracy'})
+model_classifier.compile(
+    optimizer=optimizer_classifier, \
+    loss=[class_loss_cls, class_loss_regr(len(classes_count)-1)], 
+    metrics={'dense_class_{}'.format(len(classes_count)): 'accuracy'}
+)
 model_all.compile(optimizer='sgd', loss='mae')
 
 # %%
@@ -379,6 +383,8 @@ rpn_accuracy_for_epoch = []
 # else:
 #     best_loss = np.min(r_curr_loss)
 # print(len(record_df))
+
+best_loss = np.Inf
 
 # %%
 
@@ -475,7 +481,10 @@ for epoch_num in range(num_epochs):
         #  X2[:, sel_samples, :] => num_rois (4 in here) bboxes which contains selected neg and pos
         #  Y1[:, sel_samples, :] => one hot encode for num_rois bboxes which contains selected neg and pos
         #  Y2[:, sel_samples, :] => labels and gt bboxes for num_rois bboxes which contains selected neg and pos
-        loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
+        loss_class = model_classifier.train_on_batch(
+            [X, X2[:, sel_samples, :]], 
+            [Y1[:, sel_samples, :], Y2[:, sel_samples, :]]
+        )
 
         losses[iter_num, 0] = loss_rpn[1]
         losses[iter_num, 1] = loss_rpn[2]

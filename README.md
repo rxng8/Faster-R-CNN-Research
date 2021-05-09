@@ -84,15 +84,9 @@ python downloader.py data.txt --download_folder=open_image --num_processes=2
   * [**2 hours**] Implement `iou` loss, `rpn` classifier and regressor loss, and object classifier loss ([`frcnn/losses.py`](./frcnn/losses.py)).
   * [**3 hours**] Implement the `cal_rpn()` to generate the label for the rpn networks in the data generator.
 
----------------
-
-# Tentative:
-
 ## Week 14: May 2 - May 6:
-
-## Week 15: May 9 - May 13:
-
-## Week 16: May 16 - May 20:
+* [**3 hours**] `get_data` function fixing bugs and revised in [`notebook.py`](./notebook.py)
+* [**7 hours**] Training pipeline fixing bugs and revised. Trainable now! (From line 288 to end in [`notebook.py`](./notebook.py))
 
 -----------------
 
