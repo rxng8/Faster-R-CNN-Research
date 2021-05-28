@@ -183,6 +183,7 @@ def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_leng
             y_rpn_overlap: 0 or 1 (0 means the box is not an object, 1 means the box is an object)
         y_rpn_regr: list(num_bboxes, 4*y_rpn_overlap + y_rpn_regr)
             y_rpn_regr: x1,y1,x2,y2 bunding boxes coordinates
+        order of anchor size (s) and ratio (r): s1r1, s1r2, s1r3, (s1r...), s2r1, s2r2, ...
     """
     downscale = float(C.rpn_stride) 
     anchor_sizes = C.anchor_box_scales   # 128, 256, 512
@@ -567,10 +568,10 @@ if debug_num_pos==0:
 else:
     cls = Y[0][0]
     pos_cls = np.where(cls==1)
-    print(pos_cls)
+    print("POS_CLS:", pos_cls)
     regr = Y[1][0]
     pos_regr = np.where(regr==1)
-    print(pos_regr)
+    print("POS_REGR:", pos_regr)
     print('y_rpn_cls for possible pos anchor: {}'.format(cls[pos_cls[0][0],pos_cls[1][0],:]))
     print('y_rpn_regr for positive anchor: {}'.format(regr[pos_regr[0][0],pos_regr[1][0],:]))
     print('the number of bboxes:', len(image_data['bboxes']))
@@ -603,8 +604,10 @@ else:
 
         idx = pos_regr[2][i*4]/4
         anchor_size = C.anchor_box_scales[int(idx/3)]
-        anchor_ratio = C.anchor_box_ratios[2-int((idx+1)%3)]
+        #### Hot fix change 2-int((idx+1)%3) to int((idx)%3). Original: C.anchor_box_ratios[2-int((idx+1)%3)]
+        anchor_ratio = C.anchor_box_ratios[int((idx)%3)]
 
+        #### center is right!!! but bug in anc_w and anc_h ? #####
         center = (pos_regr[1][i*4]*C.rpn_stride, pos_regr[0][i*4]*C.rpn_stride)
         print('Center position of positive anchor: ', center)
         cv2.circle(img, center, 3, color, -1)
