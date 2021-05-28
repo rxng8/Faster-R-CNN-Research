@@ -81,6 +81,7 @@ def get_data(annotation_path: str):
                 'ymin': 0.448125,
                 'ymax': 0.643125}, ...]
         Dict[str, int]: classes_count
+        Dict[str, int]: class_mapping
     """
     found_bg = False
     all_imgs = {}
@@ -238,7 +239,7 @@ else:
     print(pos_regr)
     print('y_rpn_cls for possible pos anchor: {}'.format(cls[pos_cls[0][0],pos_cls[1][0],:]))
     print('y_rpn_regr for positive anchor: {}'.format(regr[pos_regr[0][0],pos_regr[1][0],:]))
-
+    print('the number of bboxes:', len(image_data['bboxes']))
     gt_x1, gt_x2 = image_data['bboxes'][0]['xmin']*(X.shape[2]/image_data['width']), \
         image_data['bboxes'][0]['xmax']*(X.shape[2]/image_data['width'])
     gt_y1, gt_y2 = image_data['bboxes'][0]['ymin']*(X.shape[1]/image_data['height']), \
@@ -369,7 +370,7 @@ total_epochs = 0
 r_epochs = 0
 
 epoch_length = 1000
-num_epochs = 40
+num_epochs = 1
 iter_num = 0
 
 total_epochs += num_epochs
