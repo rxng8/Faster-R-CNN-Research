@@ -2,15 +2,16 @@ import numpy as np
 import math
 import copy
 import matplotlib.pyplot as plt
+import cv2
 
 import tensorflow as tf
 
 from .data import get_new_img_size
 from .losses import iou
 
-def get_img_output_length(width, height):
+def get_img_output_length(width, height, downscale=16):
     def get_output_length(input_length):
-        return input_length//16
+        return input_length // downscale
 
     return get_output_length(width), get_output_length(height)
 
@@ -271,3 +272,11 @@ def show_img(img):
         plt.imshow(img, cmap='gray')
         plt.axis('off')
         plt.show()
+
+def show_img_with_box(x_img, x_min, y_min, x_max, y_max, color=(0, 255, 0)):
+    img = x_img.copy()
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) 
+    
+    cv2.rectangle(img, (x_min, y_min), (x_max, y_max), color, 2)
+    cv2.circle(img, (int((x_min+x_max)/2), int((y_min+y_max)/2)), 3, color, -1)
+    show_img(img)

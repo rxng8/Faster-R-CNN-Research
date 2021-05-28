@@ -8,7 +8,7 @@ from tensorflow.keras import backend as K
 
 from .losses import iou
 
-def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_length_calc_function):
+def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_length_calc_function, verbose=False):
     """ Copied from https://github.com/RockyXu66/Faster_RCNN_for_Open_Images_Dataset_Keras/blob/master/frcnn_train_vgg.ipynb
     (Important part!) Calculate the rpn for all anchors 
         If feature map has shape 38x50=1900, there are 1900x9=17100 potential anchors
@@ -34,8 +34,16 @@ def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_leng
     anchor_ratios = C.anchor_box_ratios  # 1:1, 1:2*sqrt(2), 2*sqrt(2):1
     num_anchors = len(anchor_sizes) * len(anchor_ratios) # 3x3=9
 
+    if verbose:
+        print("downscale: ", downscale)
+        print("anchor_sizes: ", anchor_sizes)
+        print("anchor_ratios: ", anchor_ratios)
+        print("num_anchors: ", num_anchors)
+
     # calculate the output map size based on the network architecture
     (output_width, output_height) = img_length_calc_function(resized_width, resized_height)
+    if verbose:
+        print(f"(output_width, output_height) = ({output_width}, {output_height})")
 
     n_anchratios = len(anchor_ratios)    # 3
     
@@ -55,12 +63,16 @@ def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_leng
     # get the GT box coordinates, and resize to account for image resizing
     gta = np.zeros((num_bboxes, 4))
     for bbox_num, bbox in enumerate(img_data['bboxes']):
+    
         # get the GT box coordinates, and resize to account for image resizing
         gta[bbox_num, 0] = bbox['xmin'] * (resized_width / float(width)) # * float(width) # Multiply with float(height) for clear understanding
         gta[bbox_num, 1] = bbox['xmax'] * (resized_width / float(width)) # * float(width)    # because bbox ranged [0, 1], now we want it to range 
         gta[bbox_num, 2] = bbox['ymin'] * (resized_height / float(height)) # * float(height) # to the size (width or height of the image)
         gta[bbox_num, 3] = bbox['ymax'] * (resized_height / float(height)) # * float(height)
-    
+        if verbose:
+            print(f"bbox num {bbox_num}: ")
+
+
     # rpn ground truth
 
     for anchor_size_idx in range(len(anchor_sizes)):

@@ -15,7 +15,7 @@ class Config:
         self.img_min_side = 300
 
         self.img_shape = self.img_size + (3,)
-        self.anchor_box_scales = [128, 256, 512]
+        self.anchor_box_scales = [32, 64, 128]
         self.anchor_box_ratios = [(1, 1), (1, 2*math.sqrt(2)), (2*math.sqrt(2), 1)]
 
         self.num_rois = 4 # Number of RoIs to process at once.
@@ -36,7 +36,7 @@ class Config:
         self.img_scaling_factor = 1.0
 
         # stride at the RPN (this depends on the network configuration)
-        self.rpn_stride = 16
+        self.rpn_stride = 8
 
         # scaling the stdev
         self.std_scaling = 4.0
