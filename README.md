@@ -25,7 +25,11 @@ cd dataset
 # For the case we want to use 2 processor.
 python downloader.py data.txt --download_folder=open_image --num_processes=2
 ```
-7. Start using the `notebook.py` file.
+7. Other dataset (fire detection):
+  * [Mendeley](https://data.mendeley.com/datasets/gjmr63rz2r/1): 25 mb
+  * [Kaggle](https://www.kaggle.com/phylake1337/fire-dataset): 390 mb
+  * [Github](https://github.com/cair/Fire-Detection-Image-Dataset): 131 mb
+8. Start using the `notebook.py` file.
 
 # Project struture:
 * [`notebook.py`](./notebook.py): 
