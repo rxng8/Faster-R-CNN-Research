@@ -28,12 +28,12 @@ from tensorflow.keras.utils import Progbar
 from frcnn import Config
 from frcnn.models import vgg_base, rpn_network, classifier_layer, rpn_to_roi
 # from frcnn.data import data_generator
-from frcnn.utils import get_img_output_length, show_img, calc_iou, show_img_with_box
+from frcnn.utils import get_img_output_length, show_img, show_img_with_box, iou
 from frcnn.losses import rpn_loss_cls, rpn_loss_regr, class_loss_cls, class_loss_regr
 
 # from frcnn.data import *
 from frcnn.data import get_new_img_size, augment, data_generator
-from frcnn.losses import iou
+from frcnn.losses import calc_iou
 
 # These configs are to put into the config files, 
 # but put here to easily testing
@@ -48,14 +48,16 @@ C.anchor_sizes = []
 C.num_rois = 4 # Number of RoIs to process at once.
 
 # Augmentation flag
-C.horizontal_flips = True # Augment with horizontal flips in training. 
-C.vertical_flips = True   # Augment with vertical flips in training. 
-C.rot_90 = True           # Augment with 90 degree rotations in training. 
+C.use_horizontal_flips = False # Augment with horizontal flips in training. 
+C.use_vertical_flips = False   # Augment with vertical flips in training. 
+C.rot_90 = False           # Augment with 90 degree rotations in training. 
 
 # These configs are temporary configs
 
-BASE_PATH = "./dataset/open_image"
-ANNOTATION_PATH = "./dataset/train-annotations-bbox.csv"
+# BASE_PATH = "./dataset/open_image"
+# ANNOTATION_PATH = "./dataset/train-annotations-bbox.csv"
+BASE_PATH = "./dataset/test_ds/train/"
+ANNOTATION_PATH = "./dataset/test_ds/train/_annotations.csv"
 record_path = os.path.join("./models/", 'model/record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 BATCH_SIZE = 32
 EPOCHS = 1
@@ -64,8 +66,8 @@ train_path = ""
 
 C.record_path = record_path
 C.model_path = ""
-C.img_folder = "./dataset/open_image"
-C.annotation_path = "./dataset/train-annotations-bbox.csv"
+C.img_folder = BASE_PATH
+C.annotation_path = ANNOTATION_PATH
 C.img_extension = ".jpg"
 
 # %%
@@ -109,21 +111,32 @@ def get_data(annotation_path: str):
 
         if filename not in all_imgs:
             all_imgs[filename] = {}
-
-            img = cv2.imread(os.path.join(C.img_folder, filename + C.img_extension))
+            if filename.endswith(C.img_extension):
+                img = cv2.imread(os.path.join(C.img_folder, filename))
+            else:
+                img = cv2.imread(os.path.join(C.img_folder, filename + C.img_extension))
+            
             # show_img(img)
             (rows, cols) = img.shape[:2]
-            all_imgs[filename]['filepath'] = os.path.join(C.img_folder, filename + C.img_extension)
+
+            if filename.endswith(C.img_extension):
+                all_imgs[filename]['filepath'] = os.path.join(C.img_folder, filename)
+            else:
+                all_imgs[filename]['filepath'] = os.path.join(C.img_folder, filename + C.img_extension)
             all_imgs[filename]['width'] = cols
             all_imgs[filename]['height'] = rows
             all_imgs[filename]['bboxes'] = []
 
         all_imgs[filename]['bboxes'].append({
             'class': class_name,
-            'xmin': xmin * float(cols),
-            'xmax': xmax * float(cols),
-            'ymin': ymin * float(rows),
-            'ymax': ymax * float(rows)
+            # 'xmin': xmin * float(cols),
+            # 'xmax': xmax * float(cols),
+            # 'ymin': ymin * float(rows),
+            # 'ymax': ymax * float(rows)
+            'xmin': xmin,
+            'xmax': xmax,
+            'ymin': ymin,
+            'ymax': ymax
         })
 
     all_data = []
@@ -146,8 +159,6 @@ def get_data(annotation_path: str):
 
     return all_data, classes_count, class_mapping
 
-# all_data, classes_count, class_mapping = get_data(C.annotation_path)
-
 
 # %%
 
@@ -159,7 +170,9 @@ train_imgs, classes_count, class_mapping = get_data(C.annotation_path)
 print()
 print('Spend %0.2f mins to load the data' % ((time.time()-st)/60) )
 
+
 # %%
+
 
 # Get train data generator which generate X, Y, image_data
 data_gen_train = data_generator(
@@ -176,6 +189,7 @@ data_gen_train = data_generator(
 
 X, Y, image_data, debug_img, debug_num_pos = next(data_gen_train)
 
+
 print('Original image: height=%d width=%d'%(image_data['height'], image_data['width']))
 print('Resized image:  height=%d width=%d C.img_min_size=%d'%(X.shape[1], X.shape[2], C.img_min_side))
 print('Feature map size: height=%d width=%d C.rpn_stride=%d'%(Y[0].shape[1], Y[0].shape[2], C.rpn_stride))
@@ -187,10 +201,10 @@ print(image_data)
 
 print('Number of positive anchors for this image: %d' % (debug_num_pos))
 if debug_num_pos==0:
-    gt_x1, gt_x2 = image_data['bboxes'][0]['xmin']*(X.shape[2]/image_data['height']), \
-        image_data['bboxes'][0]['xmax']*(X.shape[2]/image_data['height'])
-    gt_y1, gt_y2 = image_data['bboxes'][0]['ymin']*(X.shape[1]/image_data['width']), \
-        image_data['bboxes'][0]['ymax']*(X.shape[1]/image_data['width'])
+    gt_x1, gt_x2 = image_data['bboxes'][0]['xmin']*(X.shape[2]/image_data['width']), \
+        image_data['bboxes'][0]['xmax']*(X.shape[2]/image_data['width'])
+    gt_y1, gt_y2 = image_data['bboxes'][0]['ymin']*(X.shape[1]/image_data['height']), \
+        image_data['bboxes'][0]['ymax']*(X.shape[1]/image_data['height'])
     gt_x1, gt_y1, gt_x2, gt_y2 = int(gt_x1), int(gt_y1), int(gt_x2), int(gt_y2)
 
     img = debug_img.copy()

@@ -16,8 +16,10 @@ class Config:
 
         self.img_shape = self.img_size + (3,)
         # Anchor box scale affects the width and heights of the anchor boxes.
-        self.anchor_box_scales = [32, 64, 128]
-        self.anchor_box_ratios = [(1, 1), (1, 2*math.sqrt(2)), (2*math.sqrt(2), 1)]
+        self.anchor_box_scales = [16, 32, 48]
+        # ratio of (w, h) --- (col, row)
+        # self.anchor_box_ratios = [(1, 1), (1, 2*math.sqrt(2)), (2*math.sqrt(2), 1)]
+        self.anchor_box_ratios = [(5*math.sqrt(2), 1), (8, 1), (8*math.sqrt(2), 1)]
 
         self.num_rois = 4 # Number of RoIs to process at once.
 
@@ -38,7 +40,7 @@ class Config:
 
         # stride at the RPN (this depends on the network configuration)
         # Stride affects the center position of the anchor box
-        self.rpn_stride = 8
+        self.rpn_stride = 16
 
         # scaling the stdev
         self.std_scaling = 4.0
@@ -59,4 +61,4 @@ class Config:
         # Downscale affects the density of the anchor boxes that we are statically drawing out
         # to test for iou.
         # E.g: Img size (400, 300) => anchors position: (400 // x, 300 // x)
-        self.downscale = 8
+        self.downscale = 16

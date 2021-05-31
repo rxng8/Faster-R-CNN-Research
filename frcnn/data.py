@@ -6,7 +6,7 @@ import cv2
 
 from tensorflow.keras import backend as K
 
-from .losses import iou
+from .utils import show_img, show_img_with_box, get_new_img_size, iou
 
 def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_length_calc_function, verbose=False):
     """ Copied from https://github.com/RockyXu66/Faster_RCNN_for_Open_Images_Dataset_Keras/blob/master/frcnn_train_vgg.ipynb
@@ -148,6 +148,7 @@ def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_leng
 
                             # See the width and height of groundtruth boxes and anchor boxes.
                             if verbose:
+                                print(f"Feature number: (ix: {ix}, jy: {jy})")
                                 print("gt xmin:", gta[bbox_num, 0])
                                 print("gt ymin:", gta[bbox_num, 2])
                                 print("gt xmax:", gta[bbox_num, 1])
@@ -375,27 +376,7 @@ def data_generator(all_img_data, C, img_length_calc_function, mode='train', verb
                 continue
 
 
-def get_new_img_size(width, height, img_min_side=300):
-    """ copied from https://github.com/RockyXu66/Faster_RCNN_for_Open_Images_Dataset_Keras/blob/master/frcnn_train_vgg.ipynb
 
-    Args:
-        width ([type]): [description]
-        height ([type]): [description]
-        img_min_side (int, optional): [description]. Defaults to 300.
-
-    Returns:
-        [type]: [description]
-    """
-    if width <= height:
-        f = float(img_min_side) / width
-        resized_height = int(f * height)
-        resized_width = img_min_side
-    else:
-        f = float(img_min_side) / height
-        resized_width = int(f * width)
-        resized_height = img_min_side
-
-    return resized_width, resized_height
 
 def augment(img_data, config, augment=True):
     """ Copied and editted from https://github.com/RockyXu66/Faster_RCNN_for_Open_Images_Dataset_Keras/blob/master/frcnn_train_vgg.ipynb
