@@ -154,8 +154,8 @@ def get_real_coordinates(ratio, x1, y1, x2, y2):
 # %%
 
 num_features = 512
-
 input_shape_features = (None, None, num_features)
+
 input_shape_img = (None, None, 3)
 
 img_input = layers.Input(shape=input_shape_img)
@@ -172,22 +172,40 @@ rpn_classify_layer, rpn_regress_layer = rpn_network(num_anchors)
 rpn_cls_tensor = rpn_classify_layer(shared_layers_tensor)
 rpn_regr_tensor = rpn_regress_layer(shared_layers_tensor)
 
-classifier_cls_tensor, classifier_regr_tensor = classifier_layer(feature_map_input, roi_input, C.num_rois, nb_classes=len(C.class_mapping))
+classifier_cls_tensor, classifier_regr_tensor = classifier_layer(
+    shared_layers_tensor, 
+    roi_input, 
+    C.num_rois, 
+    nb_classes=len(C.class_mapping)
+)
 
-model_rpn = Model(img_input, [rpn_cls_tensor, rpn_regr_tensor])
-model_classifier_only = Model([feature_map_input, roi_input], [classifier_cls_tensor, classifier_regr_tensor])
-model_classifier = Model([feature_map_input, roi_input], [classifier_cls_tensor, classifier_regr_tensor])
+classifier_cls_tensor_only, classifier_regr_tensor_only = classifier_layer(
+    feature_map_input, 
+    roi_input, 
+    C.num_rois, 
+    nb_classes=len(C.class_mapping)
+)
 
-# this is a model that holds both the RPN and the classifier, used to load/save weights for the models
-# model_all = Model([img_input, roi_input], [rpn_cls_tensor, rpn_regr_tensor] + [classifier_cls_tensor, classifier_regr_tensor])
-# model_all.load_weights(C.model_path)
+model_rpn = Model(img_input, [rpn_cls_tensor, rpn_regr_tensor, shared_layers_tensor])
+model_classifier = Model(
+    [img_input, roi_input], 
+    [classifier_cls_tensor, classifier_regr_tensor]
+)
+model_classifier_only = Model(
+    [feature_map_input, roi_input], 
+    [classifier_cls_tensor_only, classifier_regr_tensor_only]
+)
 
 print('Loading weights from {}'.format(C.model_path))
 model_rpn.load_weights(C.model_path, by_name=False)
 # model_classifier.load_weights(C.model_path, by_name=False)
 
 model_rpn.compile(optimizer='sgd', loss='mse')
-model_classifier.compile(optimizer='sgd', loss='mse')
+model_classifier_only.compile(optimizer='sgd', loss='mse')
+
+# %%
+
+model_rpn.summary()
 
 
 # %%
@@ -219,7 +237,7 @@ classes = {}
 
 
 # If the box classification value is less than this, we ignore this box
-bbox_threshold = 0.7
+bbox_threshold = 0.4
 
 for idx, img_name in enumerate(imgs_path):
     if not img_name.lower().endswith(('.bmp', '.jpeg', '.jpg', '.png', '.tif', '.tiff')):
@@ -241,7 +259,8 @@ for idx, img_name in enumerate(imgs_path):
 
     # Get bboxes by applying NMS 
     # R.shape = (300, 4)
-    R = rpn_to_roi(Y1, Y2, C, K.image_dim_ordering(), overlap_thresh=0.7)
+    R = rpn_to_roi(Y1, Y2, C, overlap_thresh=0.7)
+    print(R.shape)
 
     # convert from (x1,y1,x2,y2) to (x,y,w,h)
     R[:, 2] -= R[:, 0]
@@ -269,11 +288,13 @@ for idx, img_name in enumerate(imgs_path):
 
         # Calculate bboxes coordinates on resized image
         for ii in range(P_cls.shape[1]):
+            # print("Get here!")
             # Ignore 'bg' class
             if np.max(P_cls[0, ii, :]) < bbox_threshold or np.argmax(P_cls[0, ii, :]) == (P_cls.shape[2] - 1):
                 continue
 
             cls_name = class_mapping[np.argmax(P_cls[0, ii, :])]
+            # print("Get here 2")
 
             if cls_name not in bboxes:
                 bboxes[cls_name] = []
@@ -324,6 +345,7 @@ for idx, img_name in enumerate(imgs_path):
     plt.grid()
     plt.imshow(cv2.cvtColor(img,cv2.COLOR_BGR2RGB))
     plt.show()
+    
 
 
 

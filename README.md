@@ -1,7 +1,7 @@
 
 # Faster R-CNN Research and Implementation
 
-As the title, this repo is for Faster R-CNN implementation.
+As the title, this repo is for Faster R-CNN implementation. The algorithm is mainly based on [this article](https://towardsdatascience.com/faster-r-cnn-object-detection-implemented-by-keras-for-custom-data-from-googles-open-images-125f62b9141a)
 
 # Installation:
 1. Install Anaconda if you have not already.
@@ -91,6 +91,10 @@ python downloader.py data.txt --download_folder=open_image --num_processes=2
 ## Week 14: May 2 - May 6:
 * [**3 hours**] `get_data` function fixing bugs and revised in [`notebook.py`](./notebook.py)
 * [**7 hours**] Training pipeline fixing bugs and revised. Trainable now! (From line 288 to end in [`notebook.py`](./notebook.py))
+
+## June 1:
+* Done: trianing and evaluating
+* BUG: Evaluating buggy
 
 -----------------
 
