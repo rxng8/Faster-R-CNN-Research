@@ -1,11 +1,12 @@
 import math
+import os
 
 from . import *
 
 class Config:
     def __init__(self) -> None:
         
-        self.verbose = False
+        self.verbose = True
 
         self.img_folder = None
         self.annotation_path = None
@@ -28,8 +29,8 @@ class Config:
         self.use_vertical_flips = True   # Augment with vertical flips in training. 
         self.rot_90 = True           # Augment with 90 degree rotations in training. 
 
-        self.record_path = None
-        self.model_path = None
+        self.record_path = os.path.join("./record/", 'record.csv')
+        self.model_path = os.path.join("./model/", 'weights')
         self.num_rois = 4
 
         self.base_net_weights = None
