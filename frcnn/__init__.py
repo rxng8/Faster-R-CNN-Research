@@ -17,10 +17,13 @@ class Config:
 
         self.img_shape = self.img_size + (3,)
         # Anchor box scale affects the width and heights of the anchor boxes.
-        self.anchor_box_scales = [16, 32, 48]
+        self.anchor_box_scales = [16, 32, 64]
         # ratio of (w, h) --- (col, row)
         # self.anchor_box_ratios = [(1, 1), (1, 2*math.sqrt(2)), (2*math.sqrt(2), 1)]
-        self.anchor_box_ratios = [(5*math.sqrt(2), 1), (8, 1), (8*math.sqrt(2), 1)]
+        self.anchor_box_ratios = [
+            (8, 1), (9, 1), (10, 1), (8*math.sqrt(2), 1), (12, 1),
+            (8, 1.3), (9, 1.3), (10, 1.3), (8*math.sqrt(2), 1.3), (12, 1.3)
+        ]
 
         self.num_rois = 4 # Number of RoIs to process at once.
 
@@ -29,8 +32,8 @@ class Config:
         self.use_vertical_flips = True   # Augment with vertical flips in training. 
         self.rot_90 = True           # Augment with 90 degree rotations in training. 
 
-        self.record_path = os.path.join("./record/", 'record.csv')
-        self.model_path = os.path.join("./model/", 'weights')
+        self.record_path = None
+        self.model_path = None
         self.num_rois = 4
 
         self.base_net_weights = None
@@ -41,7 +44,7 @@ class Config:
 
         # stride at the RPN (this depends on the network configuration)
         # Stride affects the center position of the anchor box
-        self.rpn_stride = 16
+        self.rpn_stride = 8
 
         # scaling the stdev
         self.std_scaling = 4.0
@@ -49,7 +52,7 @@ class Config:
 
         # overlaps for RPN
         self.rpn_min_overlap = 0.3
-        self.rpn_max_overlap = 0.7
+        self.rpn_max_overlap = 0.9
 
         # overlaps for classifier ROIs
         self.classifier_min_overlap = 0.1
@@ -62,4 +65,4 @@ class Config:
         # Downscale affects the density of the anchor boxes that we are statically drawing out
         # to test for iou.
         # E.g: Img size (400, 300) => anchors position: (400 // x, 300 // x)
-        self.downscale = 16
+        self.downscale = 8

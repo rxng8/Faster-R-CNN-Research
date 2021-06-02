@@ -89,8 +89,8 @@ def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_leng
             for ix in range(output_width):                    
                 # x-coordinates of the current anchor box   
                 # ix + 0.5 originally 
-                x1_anc = rpn_stride * (ix + 0.1) - anchor_x / 2
-                x2_anc = rpn_stride * (ix + 0.1) + anchor_x / 2    
+                x1_anc = rpn_stride * (ix + 0.5) - anchor_x / 2
+                x2_anc = rpn_stride * (ix + 0.5) + anchor_x / 2    
                 
                 # if verbose:
                 #     print("x1_anc:", x1_anc)
@@ -105,8 +105,8 @@ def calc_rpn(C, img_data, width, height, resized_width, resized_height, img_leng
                 for jy in range(output_height):
                     # y-coordinates of the current anchor box
                     # jy + 0.5 originally 
-                    y1_anc = rpn_stride * (jy + 0.1) - anchor_y / 2
-                    y2_anc = rpn_stride * (jy + 0.1) + anchor_y / 2
+                    y1_anc = rpn_stride * (jy + 0.5) - anchor_y / 2
+                    y2_anc = rpn_stride * (jy + 0.5) + anchor_y / 2
 
                     # if verbose:
                     #     print("y1_anc:", y1_anc)

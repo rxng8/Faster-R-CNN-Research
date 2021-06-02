@@ -31,7 +31,7 @@ from tensorflow.keras.utils import Progbar
 from frcnn import Config
 
 from frcnn.data import *
-from frcnn.models import vgg_base, rpn_network, classifier_layer, rpn_to_roi
+from frcnn.models import vgg_base, rpn_network, classifier_layer, rpn_to_roi, build_conv_layer
 # from frcnn.data import data_generator
 from frcnn.utils import get_img_output_length, show_img, show_img_with_box, iou, apply_regr, non_max_suppression_fast
 from frcnn.losses import rpn_loss_cls, rpn_loss_regr, class_loss_cls, class_loss_regr
@@ -166,6 +166,10 @@ feature_map_input = layers.Input(shape=input_shape_features)
 shared_layers = vgg_base()
 shared_layers_tensor = shared_layers(img_input)
 
+# Put the vgg feature to a conv tlayer to build the feature map
+feature_map_layer = build_conv_layer(n_features=512, kernel_size=(4,4), strides=(1,1), padding='same')
+shared_layers_tensor = feature_map_layer(shared_layers_tensor)
+
 # define the RPN, built on the base layers
 num_anchors = len(C.anchor_box_scales) * len(C.anchor_box_ratios) # 9
 rpn_classify_layer, rpn_regress_layer = rpn_network(num_anchors)
@@ -237,7 +241,7 @@ classes = {}
 
 
 # If the box classification value is less than this, we ignore this box
-bbox_threshold = 0.4
+bbox_threshold = 0.7
 
 for idx, img_name in enumerate(imgs_path):
     if not img_name.lower().endswith(('.bmp', '.jpeg', '.jpg', '.png', '.tif', '.tiff')):

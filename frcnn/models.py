@@ -35,7 +35,7 @@ def vgg_base(img_shape=(None, None, 3), trainable=False, verbose=False):
     # Get all the layers except for the last layer.
     model = Model(
         inputs=base_model.input,
-        outputs=base_model.get_layer('block5_conv3').output,
+        outputs=base_model.get_layer('block4_conv3').output,
         name='base_model'
     )
     model.trainable = trainable
@@ -304,3 +304,12 @@ def classifier_layer(base_layers, input_rois, num_rois, nb_classes = 4):
     out_regr = TimeDistributed(Dense(4 * (nb_classes-1), activation='linear', kernel_initializer='zero'), name='dense_regress_{}'.format(nb_classes))(out)
 
     return [out_class, out_regr]
+
+def build_conv_layer(n_features=512, kernel_size=(4,4), strides=(1,1), padding='same', **kwargs):
+    return layers.Conv2D(
+        n_features,
+        kernel_size,
+        strides=strides,
+        padding=padding,
+        **kwargs
+    )

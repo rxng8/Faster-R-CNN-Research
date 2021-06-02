@@ -24,12 +24,11 @@ from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from tensorflow.keras.utils import Progbar
 
 from frcnn import Config
-from frcnn.models import vgg_base, rpn_network, classifier_layer, rpn_to_roi
+from frcnn.models import vgg_base, rpn_network, classifier_layer, rpn_to_roi, build_conv_layer
 # from frcnn.data import data_generator
 from frcnn.utils import get_img_output_length, show_img, show_img_with_box, iou
 from frcnn.losses import rpn_loss_cls, rpn_loss_regr, class_loss_cls, class_loss_regr
 
-# from frcnn.data import *
 from frcnn.data import get_new_img_size, augment, data_generator
 from frcnn.losses import calc_iou
 
@@ -56,17 +55,46 @@ C.rot_90 = False           # Augment with 90 degree rotations in training.
 # ANNOTATION_PATH = "./dataset/train-annotations-bbox.csv"
 BASE_PATH = "./dataset/test_ds/train/"
 ANNOTATION_PATH = "./dataset/test_ds/train/_annotations.csv"
-record_path = os.path.join("./record/", 'record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
 BATCH_SIZE = 32
 EPOCHS = 1
-
-train_path = ""
+record_folder = "./record/"
+model_folder = "./model/"
+if not os.path.exists(record_folder):
+    os.mkdir(record_folder)
+if not os.path.exists(model_folder):
+    os.mkdir(model_folder)
+record_path = os.path.join(record_folder, 'record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
+model_path = os.path.join(model_folder, 'weight')
 
 C.record_path = record_path
-C.model_path = "./model/weight"
+C.model_path = model_path
 C.img_folder = BASE_PATH
 C.annotation_path = ANNOTATION_PATH
 C.img_extension = ".jpg"
+
+# # %%
+# from tensorflow.keras.applications import VGG16, MobileNetV2
+# img_shape=(256, 256, 3)
+# trainable=False
+# base_model = VGG16(
+#     input_shape=img_shape,
+#     include_top=False,
+#     weights='imagenet'
+# )
+# base_model.trainable = trainable
+# # Get all the layers except for the last layer.
+# model = Model(
+#     inputs=base_model.input,
+#     outputs=base_model.get_layer('block4_conv3').output,
+#     name='base_model'
+# )
+# model.trainable = trainable
+# # %%
+# model.summary()
+
+
+# %%
+
 
 # %%
 
@@ -270,7 +298,7 @@ else:
         color = (100+i*(155/4), 0, 100+i*(155/4))
 
         idx = pos_regr[2][i*4]/4
-        anchor_size = C.anchor_box_scales[int(idx/len(C.anchor_box_scales))]
+        anchor_size = C.anchor_box_scales[int(idx/len(C.anchor_box_ratios))]
         #### Hot fix change 2-int((idx+1)%3) to int((idx)%3). Original: C.anchor_box_ratios[2-int((idx+1)%3)]
         anchor_ratio = C.anchor_box_ratios[int((idx)%len(C.anchor_box_ratios))]
 
@@ -301,6 +329,10 @@ roi_input = layers.Input(shape=(None, 4))
 # define the base network (VGG here, can be Resnet50, Inception, etc)
 shared_layers = vgg_base()
 shared_layers_tensor = shared_layers(img_input)
+
+# Put the vgg feature to a conv tlayer to build the feature map
+feature_map_layer = build_conv_layer(n_features=512, kernel_size=(4,4), strides=(1,1), padding='same')
+shared_layers_tensor = feature_map_layer(shared_layers_tensor)
 
 # define the RPN, built on the base layers
 num_anchors = len(C.anchor_box_scales) * len(C.anchor_box_ratios) # 9
@@ -375,8 +407,8 @@ r_epochs = len(record_df)
 # total_epochs = 0
 # r_epochs = 0
 
-epoch_length = 1000
-num_epochs = 1
+epoch_length = 200
+num_epochs = 10
 iter_num = 0
 
 total_epochs += num_epochs

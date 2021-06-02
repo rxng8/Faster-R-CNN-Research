@@ -1,7 +1,7 @@
 
 # Faster R-CNN Research and Implementation
 
-As the title, this repo is for Faster R-CNN implementation. The algorithm is mainly based on [this article](https://towardsdatascience.com/faster-r-cnn-object-detection-implemented-by-keras-for-custom-data-from-googles-open-images-125f62b9141a)
+As the title, this repo is for Faster R-CNN implementation. The algorithm is mainly based on [this article](https://towardsdatascience.com/faster-r-cnn-object-detection-implemented-by-keras-for-custom-data-from-googles-open-images-125f62b9141a) and [this article](https://www.analyticsvidhya.com/blog/2018/11/implementation-faster-r-cnn-python-object-detection/)
 
 # Installation:
 1. Install Anaconda if you have not already.
@@ -107,3 +107,4 @@ python downloader.py data.txt --download_folder=open_image --num_processes=2
 5. Geeksforgeek. 2020. Faster R-CNN | ML. Geeksforgeek. [https://www.geeksforgeeks.org/faster-r-cnn-ml/](https://www.geeksforgeeks.org/faster-r-cnn-ml/)
 6. RockyXu66. 2018. Faster R-CNN for Open Images Dataset by Keras. frcnn_train_vgg.ipynb. Github. https://github.com/RockyXu66/Faster_RCNN_for_Open_Images_Dataset_Keras/blob/master/frcnn_train_vgg.ipynb
 7. Phan, H. 2020. [Deep Learning] - Thuật toán Faster-RCNN với bài toán phát hiện đường lưỡi bò - Faster-RCNN object detection algorithm for Nine-dash-line detection!. Viblo. [https://viblo.asia/p/deep-learning-thuat-toan-faster-rcnn-voi-bai-toan-phat-hien-duong-luoi-bo-faster-rcnn-object-detection-algorithm-for-nine-dash-line-detection-bJzKmREOZ9N](https://viblo.asia/p/deep-learning-thuat-toan-faster-rcnn-voi-bai-toan-phat-hien-duong-luoi-bo-faster-rcnn-object-detection-algorithm-for-nine-dash-line-detection-bJzKmREOZ9N)
+8. Sharma, P. 2018. A Practical Implementation of the Faster R-CNN Algorithm for Object Detection (Part 2 – with Python codes). Analytics Vidhya. https://www.analyticsvidhya.com/blog/2018/11/implementation-faster-r-cnn-python-object-detection/
