@@ -64,7 +64,7 @@ if not os.path.exists(record_folder):
 if not os.path.exists(model_folder):
     os.mkdir(model_folder)
 record_path = os.path.join(record_folder, 'record.csv') # Record data (used to save the losses, classification accuracy and mean average precision)
-model_path = os.path.join(model_folder, 'weight')
+model_path = os.path.join(model_folder, 'weight.h5')
 
 C.record_path = record_path
 C.model_path = model_path
@@ -340,8 +340,12 @@ rpn_classify_layer, rpn_regress_layer = rpn_network(num_anchors)
 rpn_cls_tensor = rpn_classify_layer(shared_layers_tensor)
 rpn_regr_tensor = rpn_regress_layer(shared_layers_tensor)
 
-classifier_cls_tensor, classifier_regr_tensor = classifier_layer(shared_layers_tensor, roi_input, C.num_rois, nb_classes=len(class_mapping))
-
+classifier_cls_tensor, classifier_regr_tensor = classifier_layer(
+    shared_layers_tensor, 
+    roi_input, 
+    C.num_rois, 
+    nb_classes=len(class_mapping)
+)
 
 model_rpn = Model(img_input, [rpn_cls_tensor, rpn_regr_tensor])
 model_classifier = Model([img_input, roi_input], [classifier_cls_tensor, classifier_regr_tensor])

@@ -167,7 +167,7 @@ shared_layers = vgg_base()
 shared_layers_tensor = shared_layers(img_input)
 
 # Put the vgg feature to a conv tlayer to build the feature map
-feature_map_layer = build_conv_layer(n_features=512, kernel_size=(4,4), strides=(1,1), padding='same')
+feature_map_layer = build_conv_layer(n_features=512, kernel_size=(4,4), strides=(1,1), padding='same', name="hellu")
 shared_layers_tensor = feature_map_layer(shared_layers_tensor)
 
 # define the RPN, built on the base layers
@@ -183,33 +183,27 @@ classifier_cls_tensor, classifier_regr_tensor = classifier_layer(
     nb_classes=len(C.class_mapping)
 )
 
-classifier_cls_tensor_only, classifier_regr_tensor_only = classifier_layer(
-    feature_map_input, 
-    roi_input, 
-    C.num_rois, 
-    nb_classes=len(C.class_mapping)
+model_rpn = Model(
+    img_input, 
+    [rpn_cls_tensor, rpn_regr_tensor, shared_layers_tensor]
 )
 
-model_rpn = Model(img_input, [rpn_cls_tensor, rpn_regr_tensor, shared_layers_tensor])
 model_classifier = Model(
     [img_input, roi_input], 
     [classifier_cls_tensor, classifier_regr_tensor]
 )
-model_classifier_only = Model(
-    [feature_map_input, roi_input], 
-    [classifier_cls_tensor_only, classifier_regr_tensor_only]
-)
 
 print('Loading weights from {}'.format(C.model_path))
-model_rpn.load_weights(C.model_path, by_name=False)
-# model_classifier.load_weights(C.model_path, by_name=False)
+model_rpn.load_weights(C.model_path, by_name=True)
+model_classifier.load_weights(C.model_path, by_name=True)
 
 model_rpn.compile(optimizer='sgd', loss='mse')
-model_classifier_only.compile(optimizer='sgd', loss='mse')
+model_classifier.compile(optimizer='sgd', loss='mse')
 
 # %%
 
-model_rpn.summary()
+
+
 
 
 # %%
@@ -241,7 +235,7 @@ classes = {}
 
 
 # If the box classification value is less than this, we ignore this box
-bbox_threshold = 0.7
+bbox_threshold = 0.5
 
 for idx, img_name in enumerate(imgs_path):
     if not img_name.lower().endswith(('.bmp', '.jpeg', '.jpg', '.png', '.tif', '.tiff')):
@@ -288,7 +282,7 @@ for idx, img_name in enumerate(imgs_path):
             ROIs_padded[0, curr_shape[1]:, :] = ROIs[0, 0, :]
             ROIs = ROIs_padded
 
-        [P_cls, P_regr] = model_classifier_only.predict([F, ROIs])
+        [P_cls, P_regr] = model_classifier.predict([X, ROIs])
 
         # Calculate bboxes coordinates on resized image
         for ii in range(P_cls.shape[1]):
@@ -324,7 +318,7 @@ for idx, img_name in enumerate(imgs_path):
     for key in bboxes:
         bbox = np.array(bboxes[key])
 
-        new_boxes, new_probs = non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.2)
+        new_boxes, new_probs = non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0)
         for jk in range(new_boxes.shape[0]):
             (x1, y1, x2, y2) = new_boxes[jk,:]
 
@@ -340,8 +334,8 @@ for idx, img_name in enumerate(imgs_path):
             textOrg = (real_x1, real_y1-0)
 
             cv2.rectangle(img, (textOrg[0] - 5, textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (0, 0, 0), 1)
-            cv2.rectangle(img, (textOrg[0] - 5,textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (255, 255, 255), -1)
-            cv2.putText(img, textLabel, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1)
+            # cv2.rectangle(img, (textOrg[0] - 5,textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (255, 255, 255), -1)
+            # cv2.putText(img, textLabel, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1)
 
     print('Elapsed time = {}'.format(time.time() - st))
     print(all_dets)
@@ -349,7 +343,7 @@ for idx, img_name in enumerate(imgs_path):
     plt.grid()
     plt.imshow(cv2.cvtColor(img,cv2.COLOR_BGR2RGB))
     plt.show()
-    
+    break
 
 
 
